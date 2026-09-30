@@ -31,7 +31,7 @@
     <version.fontawesome>4.7.0</version.fontawesome>
     <!-- Other -->
     <version.swagger>1.6.9</version.swagger>
-    <version.log4j>2.19.0</version.log4j>
+    <version.log4j>2.25.4</version.log4j>
     <!--Maven Plugins & co-->
     <version.maven.wildfly.plugin>4.0.0.Final</version.maven.wildfly.plugin>
     <version.maven.war.plugin>3.1.0</version.maven.war.plugin>
