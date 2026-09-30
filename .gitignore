@@ -36,3 +36,5 @@ projectFilesBackup*
 *.spec.pdf
 # Local documentation tooling
 /tools/
+__pycache__/
+*.pyc

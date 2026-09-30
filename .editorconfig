@@ -13,3 +13,12 @@ trim_trailing_whitespace = false
 [{*.xml,*.xsd,*.xsl,*.xslt}]
 indent_size = 2
 tab_width = 2
+
+# Added in this repository: repository tooling, CI and documentation (upstream Java/XML settings above unchanged)
+[{*.yml,*.yaml,*.json,*.puml,*.iuml,*.py,*.sh}]
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[{*.yml,*.yaml,*.json,*.puml,*.iuml}]
+indent_size = 2
+tab_width = 2

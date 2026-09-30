@@ -1,0 +1,10 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jar binary
+*.sh  text eol=lf
+# Generated documentation: collapsed in diffs and excluded from language statistics
+docs/**/rendered/**        linguist-generated=true
+docs/uml/markdown/**       linguist-generated=true
+docs/testing/test-cases.*  linguist-generated=true
+docs/**                    linguist-documentation=true

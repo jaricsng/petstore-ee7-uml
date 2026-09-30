@@ -1,0 +1,46 @@
+# Local quality gates. Install once:  pre-commit install --hook-type pre-commit --hook-type commit-msg
+# Update pinned versions:              pre-commit autoupdate
+# Hooks run on staged files only, so untouched upstream code is not reformatted.
+minimum_pre_commit_version: "3.5.0"
+default_install_hook_types: [pre-commit, commit-msg]
+exclude: ^docs/.*/rendered/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-xml
+      - id: detect-private-key
+      - id: end-of-file-fixer
+        files: \.(ya?ml|puml|iuml|py|sh)$
+      - id: trailing-whitespace
+        files: \.(ya?ml|puml|iuml|py|sh)$
+      - id: check-executables-have-shebangs
+      - id: no-commit-to-branch
+        args: ["--branch", "main"]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+
+  - repo: local
+    hooks:
+      - id: docs-check
+        name: docs check (render.sh --check)
+        entry: ./docs/render.sh --check
+        language: system
+        files: ^docs/
+        pass_filenames: false
