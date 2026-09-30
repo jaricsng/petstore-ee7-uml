@@ -8,6 +8,21 @@
 
 [Download the code from GitHub](https://github.com/agoncal/agoncal-application-petstore-ee7)
 
+## About this repository (petstore-ee7-uml)
+
+This repository is an adaptation of Antonio Goncalves's
+[agoncal-application-petstore-ee7](https://github.com/agoncal/agoncal-application-petstore-ee7),
+used for teaching software design and documentation. The application code is unchanged from upstream
+commit `725839c` (tag `upstream-725839c`). What this repository adds:
+
+| Area | Contents |
+|---|---|
+| [Design documentation](docs/README.md) | UML 2.5.1 model (all 14 diagram kinds and design patterns), C4 architecture and ADRs, wireframes, REST API review and OpenAPI 3.1 contract, test plan and 65 test cases |
+| Checks | `./docs/render.sh --check` verifies diagrams, traceability, generated pages and links |
+| Licence | CC BY-SA 3.0, the same as upstream. See [LICENSE](LICENSE) and [NOTICE](NOTICE) |
+
+The sections below are the original upstream README.
+
 ## Purpose of this application
 
 Do you remember the good old Java [Petstore](http://java.sun.com/developer/releases/petstore/) ? It was a sample application created by Sun for its [Java BluePrints](http://www.oracle.com/technetwork/java/javaee/blueprints/index.html) program. The Java Petstore was designed to illustrate how J2EE (and then Java EE) could be used to develop an eCommerce web application. Yes, the point of the Petstore is to sell pets online. The Petstore had a huge momentum and we started to see plenty of Petstore-like applications flourish. The idea was to build an application with a certain technology. Let's face it, the J2EE version was far too complex using plenty of (today outdated) [design patterns](http://java.sun.com/blueprints/corej2eepatterns/). When I wrote my [Java EE 5 book](http://www.eyrolles.com/Informatique/Livre/java-ee5-9782212120387) back in 2006, I decided to write a Petstore-like application but much simpler. But again, it's out-dated today.
