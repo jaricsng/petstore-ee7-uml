@@ -1,0 +1,80 @@
+@startuml 13a-sequence-confirm-order
+' @kind: Sequence
+' @summary: Confirm order across JSF, CDI interceptors, EJB, JTA and JPA with alt/loop/opt fragments.
+!include ../_style.iuml
+mainframe **sd** ConfirmOrder
+title Sequence Diagram - Confirm order (full stack: JSF -> CDI -> EJB -> JPA)
+
+actor ":Customer" as user
+participant ":FacesServlet" as fs
+participant "cart :\nShoppingCartBean" as cart <<ConversationScoped>>
+participant ":ExceptionInterceptor" as exi <<Interceptor>>
+participant "acct :\nAccountBean" as acct <<SessionScoped>>
+participant ":LoggingInterceptor" as li <<Interceptor>>
+participant "orderSvc :\nPurchaseOrderService" as os <<Stateless>>
+participant "em :\nEntityManager" as em
+participant "order :\nPurchaseOrder" as po
+participant "db :\nPetstorePU" as db
+
+user -> fs : POST confirmorder.xhtml\n(creditCard, cid)
+activate fs
+fs -> exi : confirmOrder()
+activate exi
+note right of exi: @CatchException\n@AroundInvoke
+exi -> cart : proceed()
+activate cart
+cart -> acct : loggedInCustomer.get()
+note right: @Produces @LoggedIn\nCustomer
+acct --> cart : get : customer
+cart -> li : createOrder(customer, creditCard, cartItems)
+activate li
+li -> li : logger.entering(..)
+li -> os : proceed()
+activate os
+note over os, db: container-managed JTA transaction (REQUIRED) begins
+
+alt cartItems == null or empty
+  os -->> li : proceed : ValidationException
+  note right: exception raised
+  note over os: JTA rollback
+  li -->> cart : createOrder : EJBException
+  cart -->> exi : proceed : exception
+  exi -> exi : addErrorMessage(e.getMessage())
+  exi --> fs : confirmOrder : null (stay on page)
+else cart has items
+  os -> em : find(Country.class, countryId)
+  em --> os : find : country
+  os -> em : merge(customer)
+  em --> os : merge : managedCustomer
+  create po
+  os -->> po : PurchaseOrder(managedCustomer, creditCard, deliveryAddress)
+  loop for each cartItem in cartItems
+    os -> em : merge(cartItem.item)
+    em --> os : merge : managedItem
+    os -> os : orderLines.add(new OrderLine(qty, managedItem))
+  end
+  os -> po : setOrderLines(orderLines)
+  os -> em : persist(order)
+  activate em
+  em -> po : setDefaultData()
+  note right: @PrePersist
+  em -> db : INSERT purchase_order, order_line,\nt_order_order_line
+  deactivate em
+  note over os, db: JTA commit on method return
+  os --> li : proceed : order
+  deactivate os
+  li -> li : logger.exiting(..)
+  li --> cart : createOrder : order
+  deactivate li
+  cart -> cart : cartItems.clear()
+  opt !conversation.isTransient()
+    cart -> cart : conversation.end()
+  end
+  cart --> exi : proceed : "orderconfirmed.faces"
+  deactivate cart
+  exi --> fs : confirmOrder : "orderconfirmed.faces"
+  deactivate exi
+end
+fs --> user : POST : 200 orderconfirmed.xhtml
+deactivate fs
+@enduml

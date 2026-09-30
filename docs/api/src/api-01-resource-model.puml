@@ -1,0 +1,58 @@
+@startuml api-01-resource-model
+' REST resource model: current /rest (entity-based) vs proposed /api/v1 (DTO-based)
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam ClassBackgroundColor #F7FAFD
+skinparam ClassBorderColor #2F5D8A
+skinparam ClassAttributeIconSize 0
+skinparam packageStyle rectangle
+hide circle
+title REST interface - resource model: current (/rest) vs proposed (/api/v1)
+
+package "Current: /applicationPetstore/rest (Swagger 2.0, no auth)" as cur #FFF5F5 {
+  class "/categories" as c1 <<collection>> {
+    GET ?start&max -> List<Category entity>
+    POST Category entity -> 201 Location
+  }
+  class "/categories/{id}" as c2 <<item>> {
+    GET -> 200 | 404
+    PUT entity -> 204 | 409
+    DELETE -> 204 | 404
+  }
+  class "/customers[/{id}]" as c3 <<collection+item>> {
+    GET -> Customer entity **incl. password hash**
+  }
+  class "/countries, /items, /products [/{id}]" as c4 <<collection+item>> {
+    same CRUD shape
+  }
+}
+
+package "Proposed: /api/v1 (OpenAPI 3.1, OAuth2 scopes)" as tgt #F5FFF7 {
+  class "/categories" as n1 <<collection, public read>> {
+    GET ?page&size -> CategoryPage + PageMeta
+    POST CategoryCreate [catalogue:write] -> 201 Location, ETag
+  }
+  class "/categories/{categoryId}" as n2 <<item>> {
+    GET -> Category + ETag
+    PUT If-Match [catalogue:write] -> 200 | 412 | 428
+    DELETE [catalogue:write] -> 204 | 409
+  }
+  class "/items?q=" as n3 <<collection, public read>> {
+    GET -> ItemPage (Money as decimal string)
+  }
+  class "/me/orders" as n4 <<collection, owner-scoped>> {
+    GET [orders:read] -> OrderPage (own orders only)
+    POST OrderCreate + Idempotency-Key [orders:write] -> 201 | 402 | 422
+  }
+  class "application/problem+json" as p <<error model RFC 9457>> {
+    type, title, status, detail, instance, errors[]
+  }
+}
+
+c1 --> c2 : item
+n1 --> n2 : item
+c1 ..> n1 : <<replaced by>>
+c3 ..> n4 : <<replaced by (no customer CRUD in public API)>>
+n2 ..> p
+n4 ..> p
+@enduml

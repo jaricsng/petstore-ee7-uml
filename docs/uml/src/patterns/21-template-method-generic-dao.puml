@@ -1,0 +1,65 @@
+@startuml 21-template-method-generic-dao
+' @kind: Class (design pattern)
+' @summary: Template Method, Layer Supertype and Repository/Generic DAO in AbstractService<T>.
+!include ../_style.iuml
+allowmixing
+skinparam usecaseBorderStyle dashed
+skinparam usecaseBackgroundColor #FFFFFF
+mainframe **pkg** DesignPatterns::TemplateMethod
+title Design Pattern - Template Method in AbstractService<T> with a generic Repository
+
+usecase "tm : Template Method" as TM
+usecase "rp : Repository" as RP
+
+abstract class "AbstractService<T>" as AS {
+  # entityManager : EntityManager
+  - entityClass : Class<T>
+  + persist(entity : T) : T
+  + findById(id : Long) : T
+  + merge(entity : T) : T
+  + remove(entity : T)
+  + listAll() : T [*]
+  + **count(example : T) : Long** {template}
+  + **page(example : T, page, size) : T [*]** {template}
+  # {abstract} **getSearchPredicates(root, example) : Predicate [*]** {hook}
+}
+class CategoryService {
+  # getSearchPredicates(root, example) : Predicate [*]
+}
+class CustomerService {
+  # getSearchPredicates(root, example) : Predicate [*]
+  + findCustomer(login) : Customer
+  + doesLoginAlreadyExist(login) : Boolean
+}
+class PurchaseOrderService {
+  # getSearchPredicates(root, example) : Predicate [*]
+  + createOrder(..) : PurchaseOrder
+}
+class "ItemService / ProductService /\nCountryService / OrderLineService" as Others {
+  # getSearchPredicates(root, example) : Predicate [*]
+}
+
+AS <|-- CategoryService : extends AbstractService<T -> Category>
+AS <|-- CustomerService : extends AbstractService<T -> Customer>
+AS <|-- PurchaseOrderService : extends AbstractService<T -> PurchaseOrder>
+AS <|-- Others
+
+TM .. "abstractClass" AS
+TM .. "concreteClass" CategoryService
+RP .. "repository<T>" AS
+
+note right of AS
+  **Template method** count()/page():
+  1. builder = em.getCriteriaBuilder()
+  2. root = criteria.from(entityClass)
+  3. where(**getSearchPredicates(root, example)**)  <- hook
+  4. setFirstResult(page*size).setMaxResults(size)
+  Subclasses only supply the predicate list.
+end note
+
+note bottom of PurchaseOrderService
+  Defect BUG-01: predicates reference root.get("street1")
+  but PurchaseOrder has no such attribute (it is inside
+  embedded deliveryAddress) -> IllegalArgumentException.
+end note
+@enduml

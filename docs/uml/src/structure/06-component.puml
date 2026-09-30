@@ -1,0 +1,68 @@
+@startuml 06-component
+' @kind: Component
+' @summary: Logical components of the WAR subsystem with provided/required interfaces (ball-and-socket) and ports.
+!include ../_style.iuml
+mainframe **cmp** applicationPetstore
+title Component Diagram - Logical components, provided and required interfaces
+
+actor "Web Browser" as browser
+actor "REST Client" as restc
+
+component "applicationPetstore.war" as war <<subsystem>> {
+  portin "http:8080" as phttp
+
+  component "Faces Front Controller\n(FacesServlet + Facelets *.xhtml)" as faces
+  component "Shopping UI\n(AccountBean, CatalogBean,\nShoppingCartBean, LocaleBean)" as shopui
+  component "Admin CRUD UI\n(7 x <Entity>Bean)" as adminui <<Stateful>>
+  component "REST API\n(RestApplication + 5 Endpoints)" as restapi
+  component "Catalog Service" as catsvc <<Stateless>>
+  component "Customer Service" as custsvc <<Stateless>>
+  component "Order Service" as ordsvc <<Stateless>>
+  component "Generic Entity Services\n(Category/Country/Item/Product/OrderLine)" as gensvc <<Stateless>>
+  component "Security\n(JAAS LoginModule, CallbackHandler)" as sec
+  component "Cross-cutting\n(Logging/Exception interceptors,\nCDI producers)" as xcut
+  component "Domain Model\n(JPA entities, constraints)" as domain
+
+  portout "jdbc" as pjdbc
+
+  interface "ICatalog" as ICatalog <<interface>>
+  interface "ICustomer" as ICustomer <<interface>>
+  interface "IOrder" as IOrder <<interface>>
+  interface "IEntityCrud<T>" as ICrud <<interface>>
+  interface "EntityManager" as IEM <<interface>>
+  interface "LoginContext" as ILogin <<interface>>
+  interface "Logger / @ConfigProperty" as ICfg <<interface>>
+}
+
+component "applicationPetstorePU\n(JTA DataSource\njava:jboss/datasources/ExampleDS)" as ds
+
+browser --> phttp : HTTPS/HTML
+restc --> phttp : JSON/XML
+phttp - faces
+phttp - restapi
+faces ..> shopui : EL #{...}
+faces ..> adminui : EL #{...}
+
+catsvc -up- ICatalog
+custsvc -up- ICustomer
+ordsvc -up- IOrder
+gensvc -up- ICrud
+domain - IEM
+sec -up- ILogin
+xcut -up- ICfg
+
+shopui --( ICatalog
+shopui --( ICustomer
+shopui --( IOrder
+shopui ..( ILogin
+adminui --( IEM
+restapi --( IEM
+catsvc --( IEM
+custsvc --( IEM
+ordsvc --( IEM
+gensvc --( IEM
+sec --( ICustomer
+sec --( ICfg
+IEM - pjdbc
+pjdbc --> ds : JDBC
+@enduml

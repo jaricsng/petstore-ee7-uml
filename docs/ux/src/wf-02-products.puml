@@ -1,0 +1,18 @@
+@startuml wf-02-products
+!include _chrome.iuml
+title Wireframe - Products of a category - showproducts.xhtml (UC01)
+salt
+{+
+$navbar("Log in")
+==
+<b>Products for category : Fish
+{#
+  <b>Product | <b>Description
+  Angelfish | Saltwater fish from Australia
+  Tiger Shark | Saltwater fish from Australia
+  Koi | Freshwater fish from Japan
+  Goldfish | Freshwater fish from China
+}
+$footer()
+}
+@enduml

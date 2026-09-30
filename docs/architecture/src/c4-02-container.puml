@@ -1,0 +1,24 @@
+@startuml c4-02-container
+' C4 model, Level 2 - Container diagram
+!include <C4/C4_Container>
+LAYOUT_WITH_LEGEND()
+title C4 Level 2 - Containers: YAPS PetStore - as built
+
+Person(customer, "Visitor / Customer", "Shopper using a web browser.")
+Person(admin, "Administrator", "Back-office user.")
+System_Ext(apiClient, "REST API Client", "Partner system or script.")
+
+System_Boundary(ps, "YAPS PetStore") {
+  Container(web, "Web Application", "Java EE 7 WAR on WildFly 26 (JSF 2.2, CDI 1.1, EJB 3.2 Lite, JPA 2.1, JAX-RS 2.0, Bean Validation 1.1)", "Single deployable (applicationPetstore.war). Renders Facelets pages, holds session and conversation state, exposes /rest/*.")
+  ContainerDb(db, "Relational Database", "H2 in-memory (java:jboss/datasources/ExampleDS); PostgreSQL 9.6 available via Docker but not wired", "Categories, products, items, customers, countries, purchase orders. Re-created on every deploy (drop-and-create + init_db.sql).")
+  Container(swagger, "API Contract", "Swagger 2.0 JSON (generated at build)", "Static /swagger.json describing /rest/* resources.")
+}
+
+Rel(customer, web, "Uses", "HTTPS, HTML (JSF postbacks, ViewState)")
+Rel(admin, web, "Uses /admin/** pages", "HTTPS, HTML")
+Rel(apiClient, web, "Calls /rest/{categories,countries,customers,items,products}", "HTTP, JSON/XML")
+Rel(apiClient, swagger, "Reads contract", "HTTP")
+Rel(web, db, "Reads and writes", "JDBC via JTA DataSource, JPA/Hibernate")
+
+SHOW_LEGEND()
+@enduml

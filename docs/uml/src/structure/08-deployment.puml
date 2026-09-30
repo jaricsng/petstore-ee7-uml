@@ -1,0 +1,52 @@
+@startuml 08-deployment
+' @kind: Deployment
+' @summary: Runtime topology: devices, execution environments (JVM, WildFly, database), artifacts, deployment specifications (dependency to the deployed artifact, 19.2.4) and <<manifest>>.
+!include ../_style.iuml
+set separator none
+mainframe **dep** PetStoreRuntime
+title Deployment Diagram - WildFly 10..26 runtime with JTA DataSource
+
+node "Client Device" as client <<device>> {
+  node "Web Browser" as br <<executionEnvironment>>
+}
+node "REST Consumer" as rc <<device>>
+
+node "Application Server Host" as host <<device>> {
+  label " " as hostpad
+  node "JVM (Java 8+)" as jvm <<executionEnvironment>> {
+    node "WildFly 26.1.3.Final\n(Java EE 7 Full/Web profile)" as wf <<executionEnvironment>> {
+      artifact "applicationPetstore.war\n(built as petstoreee7-7.0.war)" as war <<artifact>>
+      artifact "persistence.xml\n(unit: applicationPetstorePU, JTA)" as pxml <<deployment spec>>
+      artifact "beans.xml\n(bean-discovery=all, interceptors)" as bxml <<deployment spec>>
+      artifact "web.xml / faces-config.xml" as wxml <<deployment spec>>
+      artifact "petstore-test.login\n(JAAS config)" as jaas <<deployment spec>>
+      node "Undertow :8080" as ut <<executionEnvironment>>
+      artifact "hibernate-core.jar\n(JPA 2.1 provider)" as hib <<artifact>> <<library>>
+    }
+    node "H2 in-memory (embedded)\nExampleDS" as h2 <<executionEnvironment>>
+  }
+}
+
+node "Optional: Docker host" as dh <<device>> {
+  node "postgres:9.6.5 :5432\n(src/main/docker/postgresql.yml)" as pg <<executionEnvironment>>
+}
+
+component "Web / Service / Domain components (06)" as comps
+
+war ..> comps : <<manifest>>
+pxml ..> war
+bxml ..> war
+wxml ..> war
+jaas ..> war
+
+br -- ut : HTTP(S)
+rc -- ut : HTTP JSON/XML /rest/*
+wf -- h2 : JDBC (JTA via hibernate-core)
+wf -- pg : JDBC (not wired by default)
+
+note right of h2
+  schema-generation = drop-and-create
+  + init_db.sql load script on every deploy
+  (Finding OPS-01: unsafe for production)
+end note
+@enduml

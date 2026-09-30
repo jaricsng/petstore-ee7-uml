@@ -1,0 +1,104 @@
+@startuml 20-pattern-catalogue
+' @kind: Class (design patterns)
+' @summary: Catalogue of 19 patterns as CollaborationUses bound to the participating classes.
+!include ../_style.iuml
+allowmixing
+skinparam usecaseBorderStyle dashed
+skinparam usecaseBackgroundColor #FFFFFF
+left to right direction
+mainframe **pkg** DesignPatterns
+title Design Pattern Catalogue - CollaborationUses (UML 2.5.1 clause 11.7) bound to the classes that play each role
+
+package "GoF (Gamma et al., 1994)" as gof {
+  usecase "tm : Template Method" as TM
+  usecase "dec : Decorator" as DEC
+  usecase "fm : Factory Method" as FM
+  usecase "ad : Adapter" as AD
+  usecase "st : Strategy" as ST
+  usecase "px : Proxy" as PX
+  usecase "cp : Composite" as CP
+}
+package "Java EE / Core J2EE Patterns (Alur et al.)" as jee {
+  usecase "sf : Session Facade" as SF
+  usecase "fc : Front Controller" as FC
+  usecase "ic : Intercepting Filter / Interceptor" as IC
+  usecase "sl : Service Locator" as SL
+  usecase "di : Dependency Injection\n(CDI Producer + Qualifier)" as DI
+}
+package "Enterprise Application Architecture (Fowler, 2002) / DDD" as poeaa {
+  usecase "ls : Layer Supertype" as LS
+  usecase "rp : Repository / Generic DAO" as RP
+  usecase "vo : Embedded Value / Value Object" as VO
+  usecase "ol : Optimistic Offline Lock" as OL
+  usecase "qo : Query Object (Query by Example)" as QO
+  usecase "rf : Remote Facade (REST resource)" as RF
+  usecase "mvc : Model-View-Controller" as MVC
+}
+
+class AbstractService
+class CategoryService
+class CatalogService
+class PurchaseOrderService
+class PurchaseOrderDecorator
+interface ComputablePurchaseOrder <<interface>>
+class LoggingProducer
+class DatabaseProducer
+class NumberProducer
+class ConfigPropertyProducer
+class LoginContextProducer
+class "<Entity>Bean" as EntityBean
+class "Converter (anonymous)" as Conv
+class SimpleLoginModule
+class "javax.security.auth.spi.LoginModule" as LM
+class LoggingInterceptor
+class ExceptionInterceptor
+class "Email / Login / NotEmpty / Price" as Constr
+class FacesServlet
+class AbstractBean
+class Address
+class CreditCard
+class "<Entity>Endpoint" as Endpoint
+class "SessionContext.getBusinessObject()" as SC
+class "Category ... PurchaseOrder\n(@Version)" as Versioned
+class ShoppingCartBean
+class "*.xhtml (Facelets)" as Facelets
+class "model.*" as Model
+
+TM .. "abstractClass" AbstractService
+TM .. "concreteClass" CategoryService
+DEC .. "decorator" PurchaseOrderDecorator
+DEC .. "component" ComputablePurchaseOrder
+FM .. "creator" LoggingProducer
+FM .. "creator" NumberProducer
+FM .. "creator" ConfigPropertyProducer
+AD .. "adapter" Conv
+AD .. "adaptee" EntityBean
+ST .. "strategy" LM
+ST .. "concreteStrategy" SimpleLoginModule
+PX .. "proxy" SC
+PX .. "realSubject" EntityBean
+CP .. "composite" Constr
+
+SF .. "facade" CatalogService
+SF .. "facade" PurchaseOrderService
+FC .. "controller" FacesServlet
+IC .. "interceptor" LoggingInterceptor
+IC .. "interceptor" ExceptionInterceptor
+SL .. "client" SimpleLoginModule
+DI .. "producer" DatabaseProducer
+DI .. "producer" LoginContextProducer
+
+LS .. "supertype" AbstractService
+LS .. "supertype" AbstractBean
+RP .. "repository" AbstractService
+VO .. "value" Address
+VO .. "value" CreditCard
+OL .. "versioned" Versioned
+OL .. "conflictHandler" Endpoint
+QO .. "queryObject" AbstractService
+QO .. "queryObject" EntityBean
+RF .. "remoteFacade" Endpoint
+MVC .. "view" Facelets
+MVC .. "controller" ShoppingCartBean
+MVC .. "model" Model
+@enduml

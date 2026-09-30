@@ -1,0 +1,42 @@
+@startuml 12b-state-machine-customer-session
+' @kind: State Machine
+' @summary: Customer session states (Anonymous, Registering, Authenticated) with time events.
+!include ../_style.iuml
+hide empty description
+mainframe **stm** CustomerSession
+title State Machine Diagram - Customer session state (@SessionScoped AccountBean)
+
+[*] --> Anonymous : new HTTP session
+
+note left of Anonymous
+  loggedinCustomer = null
+  isLoggedIn() = false
+end note
+
+state Registering {
+  [*] --> CredentialsCaptured
+  state CredentialsCaptured : entry / loggedinCustomer = new Customer(login, password)
+  CredentialsCaptured --> DetailsEntry : navigate createaccount.faces
+  state DetailsEntry : do / edit profile and address
+}
+
+state Authenticated {
+  state "Shopping : ShoppingCartBean" as Shopping
+  note right of Shopping : submachine state; see stm ShoppingCartBean
+  [*] --> Browsing
+  Browsing --> Shopping : addItemToCart
+  Shopping --> Browsing : confirmOrder / conversation.end()
+  Browsing --> EditingAccount : navigate updateaccount.xhtml
+  EditingAccount --> Browsing : doUpdateAccount() / merge customer
+  note left of Browsing : @LoggedIn Customer produced
+}
+
+Anonymous --> Anonymous : doLogin() [login or password empty] / warning
+Anonymous --> Authenticated : doLogin() [fields filled] / findCustomer(login)
+Anonymous --> Anonymous : doCreateNewAccount() [login exists or pwd mismatch] / warning
+Anonymous --> Registering : doCreateNewAccount() [valid]
+Registering --> Authenticated : doCreateCustomer() / persist Customer
+Authenticated --> Anonymous : doLogout() / loggedinCustomer = null; end conversation
+Anonymous --> [*] : after(30 min) / session invalidated
+Authenticated --> [*] : after(30 min) / session invalidated
+@enduml

@@ -1,0 +1,71 @@
+@startuml 25-session-facade-mvc-bce
+' @kind: Class (architectural patterns)
+' @summary: MVC, Front Controller, Session Facade and Remote Facade in a Boundary-Control-Entity layering.
+!include ../_style.iuml
+allowmixing
+skinparam usecaseBorderStyle dashed
+skinparam usecaseBackgroundColor #FFFFFF
+mainframe **pkg** DesignPatterns::LayeredMVC
+title Architectural Patterns - Layered MVC with Session Facade (EJB) and Remote Facade (JAX-RS)
+
+usecase "mvc : MVC" as MVC
+usecase "fc : Front Controller" as FC
+usecase "sf : Session Facade" as SF
+usecase "rf : Remote Facade" as RF
+
+package "Boundary (View + Remote)" as B {
+  class "*.xhtml Facelets\n(PrimeFaces, Bootstrap)" as V
+  class FacesServlet
+  class "<Entity>Endpoint" as EP
+}
+package "Control" as C {
+  class CatalogBean
+  class ShoppingCartBean
+  class AccountBean
+  class CatalogService <<Stateless>>
+  class PurchaseOrderService <<Stateless>>
+  class CustomerService <<Stateless>>
+}
+package "Entity" as E {
+  class Category
+  class Product
+  class Item
+  class Customer
+  class PurchaseOrder
+}
+
+FacesServlet --> V : renders
+FacesServlet --> CatalogBean : EL action
+FacesServlet --> ShoppingCartBean : EL action
+FacesServlet --> AccountBean : EL action
+CatalogBean --> CatalogService
+ShoppingCartBean --> CatalogService
+ShoppingCartBean --> PurchaseOrderService
+AccountBean --> CustomerService
+CatalogService ..> Category
+CatalogService ..> Product
+CatalogService ..> Item
+PurchaseOrderService ..> PurchaseOrder
+CustomerService ..> Customer
+EP ..> Category : EntityManager (bypasses facade)
+V ..> CatalogBean : #{catalogBean.*}
+
+MVC .. "view" V
+MVC .. "controller" ShoppingCartBean
+MVC .. "controller" CatalogBean
+MVC .. "controller" AccountBean
+MVC .. "model" PurchaseOrder
+FC .. "frontController" FacesServlet
+SF .. "facade" CatalogService
+SF .. "facade" PurchaseOrderService
+SF .. "facade" CustomerService
+SF .. "subsystem" Item
+RF .. "remoteFacade" EP
+
+note bottom of EP
+  REST endpoints and admin <Entity>Beans talk to the
+  EntityManager directly instead of reusing the Session
+  Facades (Finding ARCH-02: duplicated data access,
+  inconsistent validation / transaction boundaries).
+end note
+@enduml

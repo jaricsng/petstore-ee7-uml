@@ -1,0 +1,54 @@
+@startuml 07a-composite-structure-application
+' @kind: Composite Structure
+' @summary: Internal structure of the application classifier: typed parts with multiplicities, ports and connectors.
+!include ../_style.iuml
+mainframe **class** PetstoreApplication
+title Composite Structure Diagram - Internal structure (parts, ports, connectors) of the PetStore application
+
+' The structured classifier is the frame; parts are typed <name> : <Type> [multiplicity]
+rectangle "PetstoreApplication" as app {
+  portin "web : HttpPort" as web
+  portin "api : RestPort" as api
+  portout "db : JdbcPort" as db
+
+  rectangle "fc : FacesServlet [1]" as fc
+  rectangle "ui : ShoppingUI [1]" as ui {
+    rectangle "account : AccountBean [1]" as acc
+    rectangle "catalog : CatalogBean [1]" as cat
+    rectangle "cart : ShoppingCartBean [0..1]" as cart
+  }
+  rectangle "admin : EntityBean [7]" as adm
+  rectangle "endpoints : EntityEndpoint [5]" as ep
+  rectangle "catalogSvc : CatalogService [1]" as cs
+  rectangle "customerSvc : CustomerService [1]" as cu
+  rectangle "orderSvc : PurchaseOrderService [1]" as os
+  rectangle "logging : LoggingInterceptor [1]" as li
+  rectangle "pu : EntityManager [1]" as em
+}
+
+web -- fc : http
+api -- ep : rest
+fc -- acc : el
+fc -- cat : el
+fc -- cart : el
+fc -- adm : el
+acc -- cu : customer
+cat -- cs : catalog
+cart -- cs : catalog
+cart -- os : order
+cart -- acc : injects @LoggedIn Customer
+cs -- em
+cu -- em
+os -- em
+adm -- em
+ep -- em
+em -- db : jdbc
+li -- cs : intercepts
+li -- cu : intercepts
+li -- os : intercepts
+
+note bottom of cart
+  Lifetime of //cart// = CDI long-running Conversation
+  (begin on first addItemToCart, end on confirmOrder).
+end note
+@enduml

@@ -1,0 +1,89 @@
+@startuml 28-domain-persistence-patterns
+' @kind: Class (design patterns)
+' @summary: Embedded Value, Identity Field, Optimistic Offline Lock, Composite constraints, lifecycle Hook and Query Object.
+!include ../_style.iuml
+allowmixing
+skinparam usecaseBorderStyle dashed
+skinparam usecaseBackgroundColor #FFFFFF
+mainframe **pkg** DesignPatterns::DomainPersistence
+title Design Patterns - Embedded Value, Identity Field, Optimistic Offline Lock, Composite Constraint, Lifecycle Hook
+
+usecase "vo : Embedded Value / Value Object" as VO
+usecase "idf : Identity Field" as IDF
+usecase "ol : Optimistic Offline Lock" as OL
+usecase "cc : Composite (constraint composition)" as CC
+usecase "hk : Hook / Observer (lifecycle callbacks)" as HK
+usecase "qo : Query Object / Named Query" as QO
+
+class Customer <<Entity>> {
+  - id : Long {id}
+  - version : Integer {version}
+  - login : String {@Login}
+  - email : String {@Email}
+  <<PrePersist>> - digestPassword()
+  <<PostLoad, PostPersist, PostUpdate>> + calculateAge()
+}
+class PurchaseOrder <<Entity>> {
+  - id : Long {id}
+  - version : Integer {version}
+  <<PrePersist>> - setDefaultData()
+}
+class Address <<Embeddable>> {
+  equals()/hashCode() by value
+}
+class CreditCard <<Embeddable>> {
+  equals()/hashCode() by value
+}
+class Item <<Entity>> {
+  - unitCost : Real {@Price}
+  .. named queries ..
+  Item.search
+}
+interface Email <<interface>> <<Constraint>>
+interface Login <<interface>> <<Constraint>>
+interface Price <<interface>> <<Constraint>>
+interface NotEmpty <<interface>> <<Constraint>>
+interface "@Size" as Size <<interface>>
+interface "@Pattern" as Pattern <<interface>>
+interface "@NotNull" as NotNull <<interface>>
+interface "@DecimalMin(10)" as DecMin <<interface>>
+class "EntityManager\n(persistence provider)" as EM
+
+Customer *-- Address
+PurchaseOrder *-- Address
+PurchaseOrder *-- CreditCard
+Email *-- Size
+Email *-- Pattern
+Login *-- NotNull
+Login *-- Size
+NotEmpty *-- NotNull
+NotEmpty *-- Size
+Price *-- DecMin
+Customer ..> Email
+Customer ..> Login
+Item ..> Price
+EM ..> Customer : notifies @PrePersist/@PostLoad
+EM ..> PurchaseOrder : notifies @PrePersist
+
+VO .. "value" Address
+VO .. "value" CreditCard
+IDF .. "id" Customer
+OL .. "version" PurchaseOrder
+CC .. "composite" Email
+CC .. "composite" Login
+CC .. "composite" Price
+CC .. "composite" NotEmpty
+CC .. "leaf" Size
+CC .. "leaf" Pattern
+CC .. "leaf" NotNull
+CC .. "leaf" DecMin
+HK .. "subject" EM
+HK .. "listener" Customer
+QO .. "namedQuery" Item
+
+note bottom of Customer
+  **Security review**: unsalted single-round SHA-256 (SEC-03);
+  password hash exposed through REST (SEC-04);
+  CreditCard stored in clear text (SEC-05, PCI DSS 3.4).
+end note
+@enduml

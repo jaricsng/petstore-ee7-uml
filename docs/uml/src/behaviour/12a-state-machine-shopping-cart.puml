@@ -1,0 +1,41 @@
+@startuml 12a-state-machine-shopping-cart
+' @kind: State Machine
+' @summary: Lifecycle of the @ConversationScoped shopping cart: composite state, entry/exit/do behaviours and internal transitions.
+!include ../_style.iuml
+hide empty description
+mainframe **stm** ShoppingCartBean
+title State Machine Diagram - Shopping cart conversation lifecycle (@ConversationScoped)
+
+[*] --> Transient
+
+note right of Transient
+  conversation.isTransient() = true
+  cartItems = null
+end note
+
+state "Long-running Conversation" as LR {
+  [*] --> Filled
+  state Filled : entry / cartItems = new ArrayList()
+  state Filled : do / display showcart.xhtml
+  state Filled : addItemToCart(id) [in cart] / quantity++
+  state Filled : addItemToCart(id) [not in cart] / cartItems.add(item, 1)
+  state Filled : removeItemFromCart(id) [size > 1] / cartItems.remove(item)
+  Filled --> Emptied : removeItemFromCart(itemId) [size = 1]
+  Emptied --> Filled : addItemToCart(itemId)
+  Filled --> CheckingOut : checkout()
+  Emptied --> CheckingOut : checkout()
+  state CheckingOut : do / display confirmorder.xhtml
+  state CheckingOut : entry / capture CreditCard
+  CheckingOut --> Filled : navigate(showcart.xhtml)
+  state CheckingOut : confirmOrder() [cartItems empty] / ValidationException -> FacesMessage
+  CheckingOut --> Ordered : confirmOrder() [cartItems not empty] / order = createOrder(..)
+  state Ordered : entry / cartItems.clear()
+  state Ordered : exit / conversation.end()
+}
+
+Transient --> LR : addItemToCart(itemId) / conversation.begin()
+Ordered --> Transient : [conversation ended]
+LR --> Transient : AccountBean.doLogout() / conversation.end()
+LR --> [*] : after(conversation timeout) / context destroyed
+Transient --> [*] : HTTP request ends
+@enduml

@@ -1,0 +1,26 @@
+@startuml c4-01-system-context
+' C4 model, Level 1 - System Context (Simon Brown, c4model.com)
+!include <C4/C4_Context>
+AddElementTag("gap", $bgColor="#FFFFFF", $fontColor="#B00020", $borderColor="#B00020", $legendText="Missing integration (gap)")
+AddRelTag("gap", $textColor="#B00020", $lineColor="#B00020", $lineStyle=DashedLine(), $legendText="Missing relationship (gap)")
+LAYOUT_WITH_LEGEND()
+title C4 Level 1 - System Context: YAPS PetStore (Java EE 7) - as built
+
+Person(visitor, "Visitor", "Anonymous shopper who browses and searches the pet catalogue.")
+Person(customer, "Customer", "Registered shopper who manages a cart and places orders.")
+Person(admin, "Administrator", "Maintains catalogue, countries, customers and purchase orders.")
+System_Ext(apiClient, "REST API Client", "Any HTTP client or partner system consuming /rest/* (JSON/XML).")
+
+System(petstore, "YAPS PetStore", "Server-rendered e-commerce web application for selling pets (Java EE 7 blueprint).")
+
+System_Ext(payment, "Payment Service Provider", "NOT INTEGRATED: card data is captured and stored by PetStore itself.", $tags="gap")
+System_Ext(mail, "E-mail / Notification Service", "NOT INTEGRATED: no order confirmation or account e-mails.", $tags="gap")
+
+Rel(visitor, petstore, "Browses, searches, registers, signs in", "HTTP(S)/HTML")
+Rel(customer, petstore, "Manages cart, checks out, updates account", "HTTP(S)/HTML")
+Rel(admin, petstore, "Performs CRUD on reference and order data", "HTTP(S)/HTML")
+Rel(apiClient, petstore, "Creates, reads, updates, deletes resources", "HTTP JSON/XML")
+Rel_D(petstore, payment, "should authorise payments", "HTTPS", $tags="gap")
+Rel_D(petstore, mail, "should send confirmations", "SMTP/HTTPS", $tags="gap")
+
+@enduml

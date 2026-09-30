@@ -1,0 +1,19 @@
+@startuml wf-13-admin-edit
+!include _chrome.iuml
+title Wireframe - Admin - item create.xhtml (UC15 Manage Catalogue)
+salt
+{+
+$navbar("Log in")
+==
+<b>Create a new Item
+{
+  Name: | "          " | *
+  Description: | "          " | .
+  Unit Cost: | "          " | *
+  Image Path: | "          " | *
+  Product: | ^Angelfish    ^ | .
+}
+{ [Save] | [Cancel] | [Delete] }
+$footer()
+}
+@enduml

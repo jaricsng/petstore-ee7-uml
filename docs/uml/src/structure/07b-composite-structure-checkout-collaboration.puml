@@ -1,0 +1,41 @@
+@startuml 07b-composite-structure-checkout-collaboration
+' @kind: Composite Structure
+' @summary: CollaborationUse "checkout : Checkout" and its role bindings to the classes that play each role.
+!include ../_style.iuml
+mainframe **class** PetstoreApplication
+title Composite Structure Diagram - CollaborationUse "checkout : Checkout" with role bindings
+
+' UML 2.5.1 clause 11.7.4: a CollaborationUse is a dashed ellipse "name : Collaboration";
+' each role binding is a dashed dependency labelled with the role name, ending on the
+' classifier (or part) that plays that role.
+usecase "checkout : Checkout" as coll #line.dashed
+
+rectangle "**Customer**" as r1
+rectangle "**ShoppingCartBean**" as r2
+rectangle "**ShoppingCartItem**" as r3
+rectangle "**CreditCard**" as r4
+rectangle "**PurchaseOrderService**" as r5
+rectangle "**PurchaseOrder**" as r6
+rectangle "**OrderLine**" as r7
+
+coll .. "buyer" r1
+coll .. "cart" r2
+coll .. "line [1..*]" r3
+coll .. "payment" r4
+coll .. "placer" r5
+coll .. "order" r6
+coll .. "orderLine [1..*]" r7
+
+note as N1
+  **Collaboration Checkout** (roles and connectors)
+  cart —[contains]— line [1..*]
+  cart —[captures]— payment
+  cart —[createOrder()]— placer
+  placer —[persists]— order
+  order —[composes]— orderLine [1..*]
+  order —[placed by]— buyer
+  ----
+  Behaviour of this collaboration: see sd ConfirmOrder,
+  see sd AddItemToCart, see sd CheckoutTiming.
+end note
+@enduml

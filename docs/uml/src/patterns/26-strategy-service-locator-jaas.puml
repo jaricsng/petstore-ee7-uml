@@ -1,0 +1,59 @@
+@startuml 26-strategy-service-locator-jaas
+' @kind: Class (design pattern)
+' @summary: Strategy (pluggable JAAS LoginModule), Callback and Service Locator.
+!include ../_style.iuml
+allowmixing
+skinparam usecaseBorderStyle dashed
+skinparam usecaseBackgroundColor #FFFFFF
+mainframe **pkg** DesignPatterns::Strategy
+title Design Pattern - Pluggable JAAS LoginModule (Strategy) with CallbackHandler and JNDI Service Locator
+
+usecase "st : Strategy" as ST
+usecase "cb : Callback (Command)" as CB
+usecase "sl : Service Locator" as SL
+
+class LoginContext {
+  + login()
+  + logout()
+}
+interface LoginModule <<interface>> {
+  + initialize(subject, handler, sharedState, options)
+  + login() : Boolean
+  + commit() : Boolean
+  + abort() : Boolean
+  + logout() : Boolean
+}
+class SimpleLoginModule
+class "petstore-test.login\nSimpleLoginModule { ... required; }" as CFG <<deployment spec>>
+interface CallbackHandler <<interface>> {
+  + handle(callbacks : Callback [*])
+}
+class SimpleCallbackHandler <<Named>>
+class CredentialsBean <<SessionScoped>>
+class "InitialContext / BeanManager\n(java:comp/BeanManager)" as JNDI
+class CustomerService <<Stateless>>
+
+LoginContext o--> "1..*" LoginModule : delegates to
+LoginModule <|.. SimpleLoginModule
+CFG ..> SimpleLoginModule : selects
+LoginContext --> CallbackHandler
+CallbackHandler <|.. SimpleCallbackHandler
+SimpleCallbackHandler --> CredentialsBean
+SimpleLoginModule ..> CallbackHandler : handle(Name, Password)
+SimpleLoginModule ..> JNDI : lookup
+JNDI ..> CustomerService : getReference()
+
+ST .. "context" LoginContext
+ST .. "strategy" LoginModule
+ST .. "concreteStrategy" SimpleLoginModule
+CB .. "handler" SimpleCallbackHandler
+SL .. "locator" JNDI
+SL .. "client" SimpleLoginModule
+
+note bottom of JNDI
+  Service Locator is needed because JAAS instantiates
+  LoginModules outside CDI. Modern alternative:
+  Jakarta Security IdentityStore (@ApplicationScoped)
+  with Pbkdf2PasswordHash.
+end note
+@enduml

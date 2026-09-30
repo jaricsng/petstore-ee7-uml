@@ -1,0 +1,85 @@
+@startuml 13f-sequence-create-account
+' @kind: Sequence
+' @summary: Two-step registration: credential validation in AccountBean, profile capture with the Country converter, then persist with @PrePersist password digest.
+!include ../_style.iuml
+mainframe **sd** CreateAccount
+title Sequence Diagram - Create a customer account (signon.xhtml -> createaccount.xhtml)
+
+actor ":Visitor" as user
+participant ":FacesServlet" as fs
+participant "acct :\nAccountBean" as acct <<SessionScoped>>
+participant "cred :\nCredentialsBean" as cred <<SessionScoped>>
+participant "countryBean :\nCountryBean" as ctb <<Stateful>>
+participant "custSvc :\nCustomerService" as cs <<Stateless>>
+participant "em :\nEntityManager" as em
+participant "customer :\nCustomer" as c
+participant "db :\nPetstorePU" as db
+
+== Step 1 - choose credentials (signon.xhtml, "New customer" form) ==
+user -> fs : POST login, password, password2
+activate fs
+fs -> cred : setLogin(), setPassword(), setPassword2()
+fs -> acct : doCreateNewAccount()
+activate acct
+acct -> cs : doesLoginAlreadyExist(login)
+cs -> em : createNamedQuery(Customer.FIND_BY_LOGIN)
+em -> db : SELECT c FROM Customer c WHERE c.login = :login
+cs --> acct : exists = doesLoginAlreadyExist
+alt login already exists
+  acct -> acct : addWarningMessage("login_exists")
+  acct --> fs : doCreateNewAccount : null
+else a field is empty
+  acct -> acct : addWarningMessage("id_pwd_filled")
+  acct --> fs : doCreateNewAccount : null
+else password != password2
+  acct -> acct : addWarningMessage("both_pwd_same")
+  acct --> fs : doCreateNewAccount : null
+else valid
+  create c
+  acct -->> c : Customer()
+  acct -> c : setLogin(login); setPassword(plainPassword)
+  acct --> fs : doCreateNewAccount : "createaccount.faces"
+end
+deactivate acct
+fs --> user : POST : page
+deactivate fs
+
+== Step 2 - enter customer details (createaccount.xhtml) ==
+user -> fs : GET createaccount.xhtml
+activate fs
+fs -> ctb : getAll()
+note right: f:selectItems country list
+ctb -> em : SELECT all Country
+fs --> user : GET : form with country menu
+deactivate fs
+
+user -> fs : POST firstName, lastName, email, phone,\ndateOfBirth, address, country id
+activate fs
+fs -> ctb : getConverter().getAsObject(countryId)
+ctb --> fs : getConverter : country
+fs -> c : set profile + homeAddress (Bean Validation)
+fs -> acct : doCreateCustomer()
+activate acct
+acct -> cs : createCustomer(customer)
+activate cs
+cs -> em : find(Country.class, homeAddress.country.id)
+cs -> c : homeAddress.setCountry(country)
+cs -> em : persist(customer)
+em -> c : digestPassword()
+note right: @PrePersist SHA-256 + Base64
+em -> db : INSERT customer
+em -> c : calculateAge()
+note right: @PostPersist
+cs --> acct : createCustomer : customer
+deactivate cs
+acct -> acct : loggedinCustomer = customer\n(@Produces @LoggedIn)
+acct --> fs : doCreateCustomer : "main.faces"
+deactivate acct
+fs --> user : POST : home page, signed in
+deactivate fs
+
+note over acct, cs
+  Relies on the admin CountryBean (@Stateful, conversation scoped) as a
+  converter from the shopping UI: cross-layer coupling (see pattern 27).
+end note
+@enduml

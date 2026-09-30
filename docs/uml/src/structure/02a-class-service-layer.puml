@@ -1,0 +1,102 @@
+@startuml 02a-class-service-layer
+' @kind: Class
+' @summary: Business service layer: AbstractService<T> generic hierarchy, CatalogService session facade, CDI decorator stub and exceptions.
+!include ../_style.iuml
+mainframe **pkg** petstore
+title Class Diagram - Business Services (Stateless EJB facades and generic entity services)
+
+package service {
+  abstract class "AbstractService<T>" as AbstractService <<Loggable>> {
+    <<PersistenceContext>> # entityManager : EntityManager
+    - entityClass : Class<T>
+    --
+    + persist(entity : T) : T
+    + findById(id : Long) : T
+    + remove(entity : T)
+    + merge(entity : T) : T
+    + listAll(startPosition : Integer, maxResult : Integer) : T [*]
+    + listAll() : T [*]
+    + getListAllQuery() : TypedQuery<T>
+    + count(example : T) : Long
+    + page(example : T, page : Integer, pageSize : Integer) : T [*]
+    # {abstract} getSearchPredicates(root : Root<T>, example : T) : Predicate [*]
+  }
+
+  class CategoryService <<Stateless>> <<LocalBean>>
+  class CountryService <<Stateless>> <<LocalBean>>
+  class ItemService <<Stateless>> <<LocalBean>>
+  class ProductService <<Stateless>> <<LocalBean>>
+  class OrderLineService <<Stateless>> <<LocalBean>>
+  class CustomerService <<Stateless>> <<LocalBean>> {
+    + doesLoginAlreadyExist(login : String) : Boolean
+    + createCustomer(customer : Customer) : Customer
+    + findCustomer(login : String) : Customer [0..1]
+    + findCustomer(login : String, password : String) : Customer
+    + findAllCustomers() : Customer [*]
+    + updateCustomer(customer : Customer) : Customer
+    + removeCustomer(customer : Customer)
+    + findCountry(countryId : Long) : Country
+  }
+  class PurchaseOrderService <<Stateless>> <<LocalBean>> {
+    + createOrder(customer : Customer, creditCard : CreditCard, cartItems : ShoppingCartItem [*]) : PurchaseOrder
+    + findOrder(orderId : Long) : PurchaseOrder
+    + findAllOrders() : PurchaseOrder [*]
+    + removeOrder(order : PurchaseOrder)
+  }
+  class CatalogService <<Stateless>> <<Loggable>> {
+    <<Inject>> - em : EntityManager
+    + findCategory(categoryId : Long) : Category
+    + findCategory(categoryName : String) : Category
+    + findAllCategories() : Category [*]
+    + create/update/removeCategory(..)
+    + findProducts(categoryName : String) : Product [*]
+    + findProduct(productId : Long) : Product
+    + create/update/removeProduct(..)
+    + findItems(productId : Long) : Item [*]
+    + findItem(itemId : Long) : Item
+    + searchItems(keyword : String) : Item [*]
+    + create/update/removeItem(..)
+  }
+
+  interface ComputablePurchaseOrder <<interface>>
+  abstract class PurchaseOrderDecorator <<Decorator>> {
+    <<Inject, Delegate>> - delegate : ComputablePurchaseOrder
+  }
+  class InventoryService <<Loggable>>
+  class ShippingService <<Loggable>>
+  class StatisticService <<Loggable>>
+}
+
+
+package exceptions {
+  class ValidationException {
+    + <<create>> ValidationException(message : String)
+  }
+  class RuntimeException
+}
+
+
+AbstractService <|-- CategoryService
+AbstractService <|-- CountryService
+AbstractService <|-- ItemService
+AbstractService <|-- ProductService
+AbstractService <|-- OrderLineService
+AbstractService <|-- CustomerService
+AbstractService <|-- PurchaseOrderService
+ComputablePurchaseOrder <|.. PurchaseOrderDecorator
+PurchaseOrderDecorator o--> "1 +delegate" ComputablePurchaseOrder
+RuntimeException <|-- ValidationException
+PurchaseOrderService ..> ValidationException : raises
+AbstractService -[hidden]right- CatalogService
+
+note right of CatalogService
+  Session Facade over Category/Product/Item.
+  Uses the CDI-produced EntityManager
+  (util.DatabaseProducer).
+end note
+note bottom of PurchaseOrderDecorator
+  CDI Decorator skeleton: ComputablePurchaseOrder
+  declares no operations and the decorator is not
+  enabled in beans.xml (dead code).
+end note
+@enduml

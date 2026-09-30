@@ -1,0 +1,25 @@
+@startuml wf-06-signon
+!include _chrome.iuml
+title Wireframe - Sign on - signon.xhtml (UC07 Sign In, UC05 Create Account)
+salt
+{+
+$navbar("Log in")
+==
+<b>Sign on
+{
+  { <b>Returning customer
+    Login:    | "user      "
+    Password: | "****      "
+    <color:#B00020>user/user - admin/admin</color> | .
+    [Sign in] | .
+  } | . | { <b>New customer
+    Login:    | "          "
+    Password: | "          "
+    Password (again): | "          "
+    [New customer] | .
+  }
+}
+<color:#B00020>SEC-08: default credentials displayed on the page</color>
+$footer()
+}
+@enduml

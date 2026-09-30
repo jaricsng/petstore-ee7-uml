@@ -1,0 +1,28 @@
+@startuml 14-communication-add-to-cart
+' @kind: Communication
+' @summary: Add item to cart with decimal message numbering and guards on links.
+!include ../_style.iuml
+mainframe **sd** AddItemToCart
+title Communication Diagram - Add item to cart (numbered messages on links)
+
+' UML 2.5.1 clause 17.9: lifelines are rectangles, messages are sequence-numbered
+' labels with direction arrows placed on the connecting links. Alternatives use guards
+' (<integer> [guard]); letter suffixes (2.5a/2.5b) would denote concurrent threads (17.9.1.3).
+actor ":Customer" as user
+rectangle ":FacesServlet" as fs
+rectangle "cart : ShoppingCartBean" as cart
+rectangle ":LoggingInterceptor" as li
+rectangle "catalog : CatalogService" as cs
+rectangle "em : EntityManager" as em
+rectangle "conv : Conversation" as conv
+rectangle "cartItems : ShoppingCartItem [*]" as items
+
+user -right- fs : "1: POST showitem.xhtml?itemId=1002 →"
+fs -right- cart : "2: addItemToCart() →\n2.7: addItemToCart : showcart.faces ←"
+cart -up- cart : "2.1: getParamId('itemId') →"
+cart -down- li : "2.2: findItem(1002) →"
+li -right- cs : "2.2.1: proceed() →"
+cs -down- em : "2.2.1.1: find(Item, 1002) →"
+cart -down- conv : "2.3: isTransient() →\n2.4 [transient]: begin() →"
+cart -down- items : "2.5 [found]: setQuantity(q+1) →\n2.6 [not found]: add(new ShoppingCartItem(item,1)) →"
+@enduml

@@ -1,0 +1,39 @@
+@startuml arch-07-layers-and-rules
+' Layered architecture view with permitted dependencies (the rules an ArchUnit test would enforce)
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam rectangleBorderColor #2F5D8A
+skinparam rectangleBackgroundColor #F7FAFD
+skinparam ArrowColor #333333
+title Layered Architecture - permitted dependencies (green) and observed violations (red)
+
+rectangle "Presentation layer\nview.shopping, view.admin, *.xhtml" as P
+rectangle "Remote interface layer\nrest (JAX-RS)" as R
+rectangle "Application / service layer\nservice (EJB session facades)" as S
+rectangle "Domain layer\nmodel, constraints, exceptions" as D
+rectangle "Infrastructure layer\nutil (CDI producers, interceptors), security (JAAS)" as I
+database "Persistence\nJPA / JDBC" as DB
+
+P -[#1B7F3B]-> S : allowed
+R -[#1B7F3B]-> S : allowed (target)
+S -[#1B7F3B]-> D : allowed
+S -[#1B7F3B]-> DB : allowed
+P -[#1B7F3B]-> D : allowed (read-only view models)
+I -[#1B7F3B]-> S : allowed
+P ..> I : allowed (annotations)
+S ..> I : allowed (annotations)
+
+R -[#B00020,dashed]-> DB : VIOLATION ARCH-02\nEntityManager in endpoints
+P -[#B00020,dashed]-> DB : VIOLATION ARCH-02\nEXTENDED PC in admin beans
+S -[#B00020,dashed]-> P : VIOLATION ARCH-01\nShoppingCartItem in view.shopping
+I -[#B00020,dashed]-> P : VIOLATION ARCH-01\nCredentialsBean in view.shopping
+
+legend right
+  |= Rule (ArchUnit layeredArchitecture) |= Status |
+  | Presentation may access Service, Domain | kept |
+  | Rest may access Service only | broken (ARCH-02) |
+  | Service may not access Presentation | broken (ARCH-01) |
+  | Infrastructure may not access Presentation | broken (ARCH-01) |
+  | No package cycles (slices) | broken |
+endlegend
+@enduml

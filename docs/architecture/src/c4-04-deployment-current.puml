@@ -1,0 +1,30 @@
+@startuml c4-04-deployment-current
+' C4 model - Deployment diagram (current / as built, development-grade)
+!include <C4/C4_Deployment>
+AddRelTag("gap", $textColor="#B00020", $lineColor="#B00020", $lineStyle=DashedLine(), $legendText="Not wired")
+title C4 Deployment - Current (as built): single WildFly node with in-memory H2
+
+Deployment_Node(client, "User device", "Windows / macOS / Linux / mobile") {
+  Deployment_Node(browser, "Web browser", "Chrome, Firefox, Safari, Edge") {
+    Container(ui, "Rendered HTML UI", "Facelets output + Bootstrap 3 + jQuery 2.2.4 + PrimeFaces 6.1", "No SPA; full-page/partial postbacks.")
+  }
+}
+
+Deployment_Node(host, "Application host", "Developer workstation or single VM") {
+  Deployment_Node(jvm, "JVM", "Java 8+") {
+    Deployment_Node(wf, "WildFly 26.1.3.Final", "Java EE 7/8 full profile, Undertow :8080 (HTTP, no TLS configured)") {
+      Container(war, "Web Application", "applicationPetstore.war", "JSF UI, REST API, EJB services, JPA")
+      ContainerDb(h2, "H2 in-memory DB", "ExampleDS (JTA)", "drop-and-create on deploy; data lost on restart")
+    }
+  }
+}
+
+Deployment_Node(docker, "Optional Docker host", "docker-compose (src/main/docker/postgresql.yml)") {
+  ContainerDb(pg, "PostgreSQL 9.6.5", ":5432", "Declared but not wired to the persistence unit")
+}
+
+Rel(ui, war, "HTTP (no TLS)", ":8080")
+Rel(war, h2, "JDBC (in-JVM)")
+Rel(war, pg, "not configured", $tags="gap")
+SHOW_LEGEND()
+@enduml

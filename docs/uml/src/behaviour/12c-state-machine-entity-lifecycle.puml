@@ -1,0 +1,49 @@
+@startuml 12c-state-machine-entity-lifecycle
+' @kind: State Machine (protocol)
+' @summary: Protocol state machine of a JPA entity: legal EntityManager call sequences, state invariants and post-conditions; lifecycle callbacks shown as notes.
+!include ../_style.iuml
+hide empty description
+mainframe **stm** EntityLifecycle «protocol»
+title State Machine Diagram - Protocol state machine of a persistent entity (legal EntityManager call sequences)
+
+' UML 2.5.1 clause 14.4.4:
+'  * keyword <<protocol>> close to the state machine name;
+'  * state invariants in [square brackets] under the state name;
+'  * ProtocolTransitions: [pre-condition] trigger / [post-condition]; no effect behaviours;
+'  * states of a ProtocolStateMachine have no entry/exit/do behaviours (callbacks are notes).
+
+[*] --> New : new Customer(..)
+
+state New : [not em.contains(this)]
+state Managed : [em.contains(this)]
+state Detached : [id <> null and not em.contains(this)]
+state Removed : [em.contains(this) and marked for DELETE]
+
+New --> Managed : persist() / [id <> null]
+Managed --> Managed : [dirty] flush() / [version = version@pre + 1]
+Managed --> Detached : commit()\nclear()\nclose()
+Detached --> Managed : [version matches row] merge() / [em.contains(result)]
+Managed --> Removed : remove()
+Detached --> Removed : remove(merge())
+Removed --> [*] : commit()
+Detached --> [*] : garbage collected
+
+state StaleCheck <<choice>>
+Detached --> StaleCheck : [version <> row version] merge()
+StaleCheck --> Detached : [REST update] / [response.status = 409]
+StaleCheck --> Detached : [JSF admin update] / [FacesMessage queued]
+
+note right of New
+  @PrePersist on persist():
+  Customer.digestPassword(),
+  PurchaseOrder.setDefaultData()
+end note
+note right of Managed
+  @PostLoad / @PostPersist / @PostUpdate:
+  Customer.calculateAge()
+end note
+note bottom of Removed
+  AbstractService.remove(entity)
+  calls em.remove(em.merge(entity))
+end note
+@enduml

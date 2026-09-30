@@ -1,0 +1,40 @@
+@startuml c4-05-container-target
+' C4 model, Level 2 - Target (recommended) container architecture
+!include <C4/C4_Container>
+AddElementTag("new", $borderColor="#1B7F3B", $legendText="New in target architecture")
+LAYOUT_WITH_LEGEND()
+title C4 Level 2 - Target architecture (recommended): secure, observable, 12-factor modular monolith
+
+Person(customer, "Visitor / Customer")
+Person(admin, "Administrator")
+System_Ext(apiClient, "REST API Client")
+System_Ext(idp, "Identity Provider", "OIDC / OAuth 2.1 (e.g. Keycloak, Entra ID)", $tags="new")
+System_Ext(psp, "Payment Service Provider", "PCI DSS Level 1; hosted fields / tokenisation", $tags="new")
+System_Ext(mail, "E-mail Service", "Transactional e-mail API", $tags="new")
+
+System_Boundary(ps, "YAPS PetStore (target)") {
+  Container(edge, "Edge / Reverse Proxy + WAF", "NGINX or cloud load balancer + OWASP CRS", "TLS 1.3 termination, HSTS, CSP, rate limiting, request size limits.", $tags="new")
+  Container(web, "Storefront + Admin Web Application", "Jakarta EE 10 (Faces 4, CDI 4, Jakarta Security 3, JPA 3.1) on WildFly 3x / Open Liberty", "Modular monolith: catalog, customer, ordering, admin modules with enforced boundaries (ArchUnit). Stateless where possible; session in distributed cache.")
+  Container(api, "Public REST API v1", "Jakarta REST 3.1 + MicroProfile OpenAPI / JWT", "Versioned, DTO-based, RFC 9457 problem details, pagination, OAuth2 scopes.", $tags="new")
+  ContainerDb(db, "PostgreSQL 16", "Managed RDBMS, encrypted at rest", "Schema migrated by Flyway; no card data stored.")
+  ContainerDb(cache, "Session / Cache Store", "Infinispan or Redis", "Distributed HTTP session and 2nd-level cache for horizontal scaling.", $tags="new")
+  Container(otel, "Observability", "OpenTelemetry Collector -> Prometheus, Grafana, Loki/Tempo", "Metrics, logs, traces; SLO dashboards and alerts.", $tags="new")
+}
+
+Rel(customer, edge, "Uses", "HTTPS")
+Rel(admin, edge, "Uses", "HTTPS")
+Rel(apiClient, edge, "Calls", "HTTPS + OAuth2 bearer token")
+Rel(edge, web, "Forwards /, /admin", "HTTP (private network)")
+Rel(edge, api, "Forwards /api/v1", "HTTP (private network)")
+Rel(web, idp, "Authenticates users (Authorization Code + PKCE)", "OIDC")
+Rel(api, idp, "Validates JWT access tokens", "JWKS")
+Rel(web, psp, "Creates payment intent; card data never touches PetStore", "HTTPS")
+Rel(web, mail, "Sends order confirmation", "HTTPS")
+Rel(web, db, "Reads/writes", "JDBC/TLS")
+Rel(api, db, "Reads/writes through application services", "JDBC/TLS")
+Rel(web, cache, "Session + L2 cache")
+Rel(web, otel, "Telemetry", "OTLP")
+Rel(api, otel, "Telemetry", "OTLP")
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,93 @@
+@startuml 04-object-order-snapshot
+' @kind: Object
+' @summary: Instance specifications of a confirmed order built from init_db.sql seed data.
+!include ../_style.iuml
+mainframe **pkg** OrderSnapshot
+title Object Diagram - Runtime snapshot of a confirmed order (seed data from init_db.sql)
+
+object "<u>fish : Category</u>" as cat {
+  id = 1000
+  name = "Fish"
+}
+object "<u>angelfish : Product</u>" as prod {
+  id = 1000
+  name = "Angelfish"
+  description = "Saltwater fish from Australia"
+}
+object "<u>tigerShark : Product</u>" as prod2 {
+  id = 1001
+  name = "Tiger Shark"
+}
+object "<u>large : Item</u>" as item1 {
+  id = 1000
+  name = "Large"
+  unitCost = 10.00
+  imagePath = "fish1.jpg"
+}
+object "<u>spotted : Item</u>" as item2 {
+  id = 1002
+  name = "Spotted"
+  unitCost = 12.00
+  imagePath = "fish4.jpg"
+}
+object "<u>anakin : Customer</u>" as cust {
+  id = 1002
+  login = "anakin"
+  firstName = "Anakin"
+  lastName = "Skywalker"
+  role = null
+}
+object "<u>: Address</u>" as home {
+  street1 = "3 Wars Street"
+  city = "Black Star"
+  zipcode = "9999"
+}
+object "<u>venezuela : Country</u>" as ctry {
+  id = 1230
+  isoCode = "VE"
+  printableName = "Venezuela"
+}
+object "<u>po : PurchaseOrder</u>" as po {
+  id = <generated>
+  orderDate = 2026-09-25
+  total = null
+}
+object "<u>l1 : OrderLine</u>" as l1 {
+  quantity = 2
+  /subTotal = 20.00
+}
+object "<u>l2 : OrderLine</u>" as l2 {
+  quantity = 1
+  /subTotal = 12.00
+}
+object "<u>: CreditCard</u>" as cc {
+  creditCardNumber = "4111..."
+  creditCardType = VISA
+  creditCardExpDate = "12/28"
+}
+object "<u>: Address</u>" as dlv {
+  street1 = "3 Wars Street"
+  city = "Black Star"
+  zipcode = "9999"
+}
+
+prod --> cat : category
+prod2 --> cat : category
+item1 --> prod : product
+item2 --> prod2 : product
+cust *-- home : homeAddress
+home --> ctry : country
+dlv --> ctry : country
+po --> cust : customer
+po *-- l1 : orderLines
+po *-- l2 : orderLines
+po *-- cc : creditCard
+po *-- dlv : deliveryAddress
+l1 --> item1 : item
+l2 --> item2 : item
+
+note right of po
+  total = null because no component
+  computes VAT/discount (Finding BUG-02).
+end note
+@enduml

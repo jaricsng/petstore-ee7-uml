@@ -1,0 +1,24 @@
+@startuml wf-12-admin-search
+!include _chrome.iuml
+title Wireframe - Admin - category search.xhtml (UC15 Manage Catalogue, includes UC19)
+salt
+{+
+$navbar("Log in")
+==
+<b>Search Category entities
+{
+  Name: | "          " | .
+  Description: | "          " | .
+  [Search] | [Create New] | .
+}
+{#
+  <b>Name | <b>Description
+  Fish | Any of numerous cold-blooded aquatic vertebrates...
+  Dogs | A domesticated carnivorous mammal...
+  Reptiles | Any of various cold-blooded...
+}
+{ << | < | Page 1 of 1 | > | >> }
+<color:#B00020>Reachable without signing in (SEC-02)</color>
+$footer()
+}
+@enduml

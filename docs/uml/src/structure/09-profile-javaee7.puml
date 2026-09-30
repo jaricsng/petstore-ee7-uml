@@ -1,0 +1,167 @@
+@startuml 09-profile-javaee7
+' @kind: Profile
+' @summary: JavaEE7 and PetStore profiles: every stereotype used in this model, tag definitions, abstract stereotypes extending metaclasses, and profile applications.
+!include ../_style.iuml
+mainframe **pkg** PetStoreModel
+title Profile Diagram - JavaEE7 and PetStore profiles (all stereotypes used in this model) and their application
+
+' UML 2.5.1 clause 12.3:
+'  * a Stereotype is a Class with keyword <<stereotype>>; its attributes are tag definitions;
+'  * an Extension connects a Stereotype to a <<metaclass>> (solid line, filled triangle at the metaclass);
+'  * Stereotypes may specialise other Stereotypes (Generalization). Here each abstract stereotype carries
+'    the Extension once and the concrete stereotypes inherit it;
+'  * a ProfileApplication is a dashed arrow with keyword <<apply>> from the applying package to the profile.
+
+package "JavaEE7" <<profile>> as jee {
+  class "Class" as MClass <<metaclass>>
+  class "DataType" as MDT <<metaclass>>
+  class "Interface" as MIf <<metaclass>>
+  class "Property" as MProp <<metaclass>>
+  class "Operation" as MOp <<metaclass>>
+
+  abstract class EjbAnnotation <<stereotype>>
+  class Stateless <<stereotype>>
+  class Stateful <<stereotype>>
+  class LocalBean <<stereotype>>
+
+  abstract class CdiScope <<stereotype>>
+  class RequestScoped <<stereotype>>
+  class SessionScoped <<stereotype>>
+  class ConversationScoped <<stereotype>>
+  class ApplicationScoped <<stereotype>>
+
+  abstract class CdiBean <<stereotype>>
+  class Named <<stereotype>>
+  class Interceptor <<stereotype>>
+  class Decorator <<stereotype>>
+
+  class Entity <<stereotype>> {
+    cacheable : Boolean = false
+  }
+  class Embeddable <<stereotype>>
+  class Path <<stereotype>> {
+    value : String
+  }
+  class ApplicationPath <<stereotype>> {
+    value : String
+  }
+
+  abstract class AnnotationType <<stereotype>>
+  class Qualifier <<stereotype>>
+  class InterceptorBinding <<stereotype>>
+  class Constraint <<stereotype>>
+
+  abstract class InjectionPoint <<stereotype>>
+  class Inject <<stereotype>>
+  class Delegate <<stereotype>>
+  class PersistenceContext <<stereotype>> {
+    unitName : String
+    type : String = "TRANSACTION"
+  }
+  class Produces <<stereotype>>
+
+  abstract class Callback <<stereotype>>
+  class PrePersist <<stereotype>>
+  class PostLoad <<stereotype>>
+  class PostPersist <<stereotype>>
+  class PostUpdate <<stereotype>>
+  class AroundInvoke <<stereotype>>
+
+  abstract class HttpMethod <<stereotype>>
+  class GET <<stereotype>>
+  class POST <<stereotype>>
+  class PUT <<stereotype>>
+  class DELETE <<stereotype>>
+}
+
+package "PetStore" <<profile>> as app {
+  class "Class" as AClass <<metaclass>>
+  class "Property" as AProp <<metaclass>>
+  class "Operation" as AOp <<metaclass>>
+  class Loggable <<stereotype>>
+  class CatchException <<stereotype>>
+  abstract class PetStoreQualifier <<stereotype>>
+  class Vat <<stereotype>>
+  class Discount <<stereotype>>
+  class LoggedIn <<stereotype>>
+  class ConfigProperty <<stereotype>> {
+    value : String = ""
+  }
+}
+
+' ---- Extensions (stereotype -> metaclass) ----
+EjbAnnotation -up-> MClass : extension
+CdiScope -up-> MClass : extension
+CdiBean -up-> MClass : extension
+Named -up-> MProp : extension
+Entity -up-> MClass : extension
+Path -up-> MClass : extension
+Path -up-> MOp : extension
+ApplicationPath -up-> MClass : extension
+Embeddable -up-> MDT : extension
+AnnotationType -up-> MIf : extension
+InjectionPoint -up-> MProp : extension
+Produces -up-> MProp : extension
+Produces -up-> MOp : extension
+Callback -up-> MOp : extension
+HttpMethod -up-> MOp : extension
+Loggable -up-> AClass : extension
+Loggable -up-> AOp : extension
+CatchException -up-> AClass : extension
+PetStoreQualifier -up-> AProp : extension
+ConfigProperty -up-> AOp : extension
+
+' ---- Stereotype generalizations ----
+EjbAnnotation <|-- Stateless
+EjbAnnotation <|-- Stateful
+EjbAnnotation <|-- LocalBean
+CdiScope <|-- RequestScoped
+CdiScope <|-- SessionScoped
+CdiScope <|-- ConversationScoped
+CdiScope <|-- ApplicationScoped
+CdiBean <|-- Named
+CdiBean <|-- Interceptor
+CdiBean <|-- Decorator
+AnnotationType <|-- Qualifier
+AnnotationType <|-- InterceptorBinding
+AnnotationType <|-- Constraint
+InjectionPoint <|-- Inject
+InjectionPoint <|-- Delegate
+InjectionPoint <|-- PersistenceContext
+Callback <|-- PrePersist
+Callback <|-- PostLoad
+Callback <|-- PostPersist
+Callback <|-- PostUpdate
+Callback <|-- AroundInvoke
+HttpMethod <|-- GET
+HttpMethod <|-- POST
+HttpMethod <|-- PUT
+HttpMethod <|-- DELETE
+PetStoreQualifier <|-- Vat
+PetStoreQualifier <|-- Discount
+PetStoreQualifier <|-- LoggedIn
+PetStoreQualifier <|-- ConfigProperty
+
+package "org.agoncal.application.petstore" as pm {
+}
+pm ..> jee : <<apply>>
+pm ..> app : <<apply>>
+
+note bottom of pm
+  Applied examples (stereotype + tagged values):
+  Category <<Entity>> {cacheable = true}
+  Address <<Embeddable>>; CatalogService <<Stateless>> <<Loggable>>
+  ShoppingCartBean <<Named>> <<ConversationScoped>> <<CatchException>>
+  CategoryEndpoint <<Stateless>> <<Path>> {value = "/categories"}
+  AbstractService::entityManager <<PersistenceContext>> {unitName = "applicationPetstorePU"}
+  NumberProducer::vatRate <<Produces>> <<Vat>> <<Named>>
+end note
+
+note top of MClass
+  **Notation deviation (PlantUML):** UML 2.5.1 clause 12.3.4 draws an
+  Extension as a solid line with a **filled** triangle at the metaclass
+  end. PlantUML has no filled-triangle head, so each Extension is drawn
+  as a solid arrow named "extension". Hollow triangles are
+  Generalizations between stereotypes (abstract stereotypes in italics).
+end note
+@enduml

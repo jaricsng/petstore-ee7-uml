@@ -1,0 +1,88 @@
+@startuml 05-package
+' @kind: Package
+' @summary: Application packages with <<use>>/<<import>> dependencies onto Java EE and third-party packages; highlights a layering cycle.
+!include ../_style.iuml
+mainframe **pkg** PetStoreEE7
+title Package Diagram - Layered architecture and dependencies
+
+package "org.agoncal.application.petstore" as root {
+  package view {
+    package shopping {
+    }
+    package admin {
+    }
+  }
+  package rest {
+  }
+  package security {
+  }
+  package service {
+  }
+  package model {
+  }
+  package constraints {
+  }
+  package exceptions {
+  }
+  package util {
+  }
+}
+
+package "Java EE 7 API (provided)" as javaee {
+  package "javax.faces" as jsf {
+  }
+  package "javax.ws.rs" as jaxrs {
+  }
+  package "javax.ejb" as ejb {
+  }
+  package "javax.enterprise (CDI)" as cdi {
+  }
+  package "javax.persistence" as jpa {
+  }
+  package "javax.validation" as bv {
+  }
+  package "javax.security.auth" as jaas {
+  }
+}
+package "Third-party (WAR/lib)" as tp {
+  package "org.primefaces" as pf {
+  }
+  package "io.swagger.annotations" as swag {
+  }
+}
+
+shopping ..> service : <<use>>
+shopping ..> model : <<use>>
+shopping ..> util : <<use>>
+admin ..> model : <<use>>
+view ..> util : <<use>>
+rest ..> model : <<use>>
+rest ..> util : <<use>>
+security ..> service : <<use>>
+security ..> shopping : <<use>>\nCredentialsBean
+security ..> util : <<use>>
+service ..> model : <<use>>
+service ..> exceptions : <<use>>
+service ..> util : <<use>>
+service ..> shopping : <<use>>\nShoppingCartItem
+model ..> constraints : <<import>>
+
+view ..> jsf : <<import>>
+view ..> pf : <<use>>
+rest ..> jaxrs : <<import>>
+rest ..> swag : <<import>>
+service ..> ejb : <<import>>
+service ..> jpa : <<import>>
+model ..> jpa : <<import>>
+model ..> bv : <<import>>
+constraints ..> bv : <<import>>
+util ..> cdi : <<import>>
+security ..> jaas : <<import>>
+
+note bottom of service
+  **Layering violations** (Finding ARCH-01):
+  service -> view.shopping (ShoppingCartItem)
+  security -> view.shopping (CredentialsBean)
+  create a cycle view <-> service / security.
+end note
+@enduml

@@ -1,0 +1,87 @@
+@startuml 02b-class-infrastructure-security
+' @kind: Class
+' @summary: Infrastructure and security: CDI producers, qualifiers, interceptor binding and JAAS LoginModule/CallbackHandler.
+!include ../_style.iuml
+mainframe **pkg** petstore
+title Class Diagram - CDI Producers, Qualifiers, Interceptor Binding and JAAS Security
+
+package util {
+  interface Loggable <<interface>> <<InterceptorBinding>>
+  interface ConfigProperty <<interface>> <<Qualifier>> {
+    value : String = ""
+  }
+  interface Vat <<interface>> <<Qualifier>>
+  interface Discount <<interface>> <<Qualifier>>
+  class LoggingInterceptor <<Interceptor>> <<Loggable>> {
+    <<Inject>> - logger : Logger
+    <<AroundInvoke>> - intercept(ic : InvocationContext) : Object
+  }
+  class LoggingProducer {
+    <<Produces>> + produceLogger(ip : InjectionPoint) : Logger
+  }
+  class DatabaseProducer {
+    <<Produces, PersistenceContext>> - em : EntityManager
+  }
+  class ConfigPropertyProducer {
+    - {static} props : Properties
+    + {static} produceConfigProperty(ip : InjectionPoint) : String <<Produces, ConfigProperty>>
+  }
+  class NumberProducer {
+    <<Produces, Vat, Named>> - vatRate : Real
+    <<Produces, Discount, Named>> - discountRate : Real
+  }
+}
+
+package security {
+  class LoginContextProducer {
+    <<Inject>> - callbackHandler : SimpleCallbackHandler
+    <<Produces>> + produceLoginContext(loginConfigFileName : String, loginModuleName : String) : LoginContext
+  }
+  class SimpleCallbackHandler <<Named>> {
+    <<Inject>> - credentials : CredentialsBean
+    + handle(callbacks : Callback [*])
+  }
+  class SimpleLoginModule {
+    - callbackHandler : CallbackHandler
+    - customerService : CustomerService
+    - beanManager : BeanManager
+    + initialize(subject, callbackHandler, sharedState, options)
+    + login() : Boolean
+    + commit() : Boolean
+    + abort() : Boolean
+    + logout() : Boolean
+    - getCustomerService() : CustomerService
+  }
+  interface "javax.security.auth.spi.LoginModule" as LoginModule <<interface>>
+  interface "javax.security.auth.callback.CallbackHandler" as CallbackHandler <<interface>>
+}
+
+
+package service {
+  class CustomerService <<Stateless>>
+  class CatalogService <<Stateless>>
+}
+package "view.shopping" {
+  class CredentialsBean <<Named>> <<SessionScoped>>
+}
+
+LoginModule <|.. SimpleLoginModule
+CallbackHandler <|.. SimpleCallbackHandler
+SimpleLoginModule --> "0..1" CustomerService : looks up (JNDI java:comp/BeanManager)
+LoginContextProducer --> "1" SimpleCallbackHandler
+LoggingInterceptor ..> Loggable : binds
+LoggingInterceptor ..> LoggingProducer : <<use>> Logger
+NumberProducer ..> Vat
+NumberProducer ..> Discount
+ConfigPropertyProducer ..> ConfigProperty
+LoginContextProducer ..> ConfigProperty : <<use>>
+CatalogService ..> DatabaseProducer : <<use>> EntityManager
+SimpleCallbackHandler --> "1 +credentials" CredentialsBean
+
+note bottom of SimpleLoginModule
+  login() calls findCustomer(login, password) with the
+  //plain-text// password while the stored value is a
+  SHA-256 digest; and AccountBean never calls
+  LoginContext.login() (see Finding SEC-01).
+end note
+@enduml

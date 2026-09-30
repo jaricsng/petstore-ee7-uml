@@ -1,0 +1,46 @@
+@startuml 10b-use-case-administration
+' @kind: Use Case
+' @summary: Administration and REST integration goals with a shared included use case.
+!include ../_style.iuml
+left to right direction
+mainframe **uc** Administration
+title Use Case Diagram (2/2) - Administration and system integration goals
+
+actor "Administrator" as admin
+actor "REST API Client" as api
+
+rectangle "<<subsystem>>\n**PetStore**" as sys {
+  usecase UC15 as "Manage Catalogue\n(Category, Product, Item)"
+  usecase UC16 as "Manage Countries"
+  usecase UC17 as "Manage Customers"
+  usecase UC18 as "Manage Purchase Orders"
+  usecase UC19 as "Search and Page Entities"
+  usecase UC20 as "View Diagnostics"
+  usecase UC21 as "Maintain Resources via REST\n(categories, countries,\ncustomers, items, products)"
+}
+
+admin -- UC15
+admin -- UC16
+admin -- UC17
+admin -- UC18
+admin -- UC20
+api -- UC21
+
+' ----- Include: arrow points base -> addition (shared paging/search) -----
+UC15 ..> UC19 : <<include>>
+UC16 ..> UC19 : <<include>>
+UC17 ..> UC19 : <<include>>
+UC18 ..> UC19 : <<include>>
+
+note right of UC19
+  Common behaviour extracted for reuse:
+  every admin page calls
+  <Entity>Bean.search() / paginate()
+  (10 rows per page).
+end note
+note bottom of api
+  Finding SEC-02: /admin/** pages and
+  /rest/** resources enforce no
+  authentication or ADMIN role check.
+end note
+@enduml

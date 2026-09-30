@@ -1,0 +1,50 @@
+@startuml 11b-activity-account
+' @kind: Activity
+' @summary: Sign-in and account registration validation flows in AccountBean.
+!include ../_style.iuml
+mainframe **act** SignInOrRegister
+title Activity Diagram - Account creation and sign-in (AccountBean)
+
+start
+:Visitor opens signon.xhtml;
+if (chosen action?) then ([sign in])
+  :Enter login + password;
+  if (login empty?) then ([yes])
+    :addWarningMessage("id_filled");
+    stop
+  elseif (password empty?) then ([yes])
+    :addWarningMessage("pwd_filled");
+    stop
+  else ([no])
+    :loggedinCustomer =\ncustomerService.findCustomer(login);
+    note right
+      **Finding SEC-01**: password is never compared;
+      loginContext.login() is commented out (TODO).
+      Any existing login signs in with any password.
+    end note
+    :navigate main.faces;
+  endif
+else ([register])
+  :Enter login, password, password2;
+  if (customerService.doesLoginAlreadyExist(login)?) then ([yes])
+    :addWarningMessage("login_exists");
+    stop
+  elseif (any field empty?) then ([yes])
+    :addWarningMessage("id_pwd_filled");
+    stop
+  elseif (password != password2?) then ([yes])
+    :addWarningMessage("both_pwd_same");
+    stop
+  else ([valid])
+    :loggedinCustomer = new Customer(login, password);
+    :navigate createaccount.faces;
+    :Enter name, e-mail, phone,\ndate of birth, address, country;
+    :doCreateCustomer();
+    :customerService.createCustomer(customer);
+    :@PrePersist digestPassword()\nSHA-256 + Base64;
+    :navigate main.faces;
+  endif
+endif
+:@Produces @LoggedIn Customer\nnow available to ShoppingCartBean;
+stop
+@enduml

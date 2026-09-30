@@ -1,0 +1,16 @@
+@startuml wf-05-search
+!include _chrome.iuml
+title Wireframe - Search results - searchresult.xhtml (UC02 Search Items)
+salt
+{+
+$navbar("Welcome Anakin | Log out")
+==
+<b>Search result for : fish
+{#
+  <b>Image | <b>Item | <b>Category / Product | <b>Unit cost | .
+  <&image> | Large | Fish / Angelfish | 10.00 $ | Add to cart
+  <&image> | Spotted | Fish / Tiger Shark | 12.00 $ | Add to cart
+}
+$footer()
+}
+@enduml
