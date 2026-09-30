@@ -1,0 +1,68 @@
+# Documentation gate ("docs-as-code"): keeps diagrams, generated pages and links in sync with the code.
+# Verifies all of docs/ (UML, architecture, UX, API, testing): PlantUML syntax, Annex A frame headings,
+# cross-diagram traceability, stereotypes against the profile, generated Markdown and test catalogue,
+# links and anchors, and the OpenAPI 3.1 contract.
+name: docs
+
+on:
+  pull_request:
+    paths: ["docs/**", "src/main/java/**", ".github/workflows/docs.yml"]
+  push:
+    branches: [main]
+    paths: ["docs/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: docs / verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PLANTUML_VERSION: "1.2025.4"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install Graphviz
+        run: sudo apt-get update -q && sudo apt-get install -y -q graphviz
+      - name: Download PlantUML (pinned version)
+        run: |
+          mkdir -p "$HOME/.local/lib"
+          curl -fsSL -o "$HOME/.local/lib/plantuml.jar" \
+            "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar"
+          echo "PLANTUML_JAR=$HOME/.local/lib/plantuml.jar" >> "$GITHUB_ENV"
+      - name: Install Python validators
+        run: python -m pip install --quiet openapi-spec-validator
+      - name: Verify documentation
+        run: ./docs/render.sh --check
+      - name: Detect stale generated text
+        # Rendered PNG/SVG bytes vary with font and Graphviz versions, so only deterministic
+        # generated text is compared. Freshness of images is checked by render.sh --check.
+        run: |
+          python docs/uml/gen_markdown.py
+          python docs/testing/gen_test_cases.py
+          git diff --exit-code -- docs/uml/markdown docs/testing/test-cases.md docs/testing/test-cases.csv || {
+            echo "::error::Generated docs are stale. Run ./docs/render.sh and commit the result."; exit 1; }
+      - name: Render diagrams for review
+        if: github.event_name == 'pull_request'
+        run: ./docs/render.sh
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: github.event_name == 'pull_request'
+        with:
+          name: rendered-diagrams
+          path: |
+            docs/*/rendered
+            docs/uml/rendered
+          retention-days: 14

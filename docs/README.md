@@ -37,7 +37,8 @@ The check fails on any of the following:
 - a broken Markdown link or anchor;
 - an invalid OpenAPI contract.
 
-A GitHub Actions template is in [`uml/ci/uml-docs.yml`](uml/ci/uml-docs.yml).
+CI runs the same check on every pull request: see [`.github/workflows/docs.yml`](../.github/workflows/docs.yml). Locally, the
+`docs-check` hook in [`.pre-commit-config.yaml`](../.pre-commit-config.yaml) runs it when files under `docs/` are staged.
 
 ## Licence
 

@@ -227,11 +227,11 @@ relevant diagrams as notes, and summarised here for triage. Severity uses a simp
 ## 4. Keeping diagrams and code in sync
 
 1. **Docs-as-code.** `.puml` sources live beside the code and change in the same PR as the Java they describe.
-2. **CI gate.** Copy [`ci/uml-docs.yml`](ci/uml-docs.yml) to `.github/workflows/`. It fails the PR on PlantUML syntax errors, stale rendered SVGs, and stale Markdown pages.
+2. **CI gate.** [`.github/workflows/docs.yml`](../../.github/workflows/docs.yml) runs `render.sh --check` on every PR and fails on PlantUML syntax errors, missing renders, stale generated pages, broken links or an invalid OpenAPI contract. It uploads the rendered diagrams as a build artifact for review.
 3. **Markdown pages are generated, never hand-edited.** `gen_markdown.py` reads the `' @kind:` / `' @summary:` header in each `.puml` and embeds the PNG plus the verbatim source; `--check` detects drift.
 4. **Stereotype lint.** `gen_markdown.py --check` rejects any `<<name>>` that is neither a UML 2.5.1 keyword or standard stereotype nor defined in profile 09.
-5. **Pre-commit hook.** Add a local hook running `./docs/uml/render.sh --check` for staged `*.puml` files.
-6. **Pull-request template.** Add a checklist item: *"UML updated for changed classes/flows (docs/uml)"*.
+5. **Pre-commit hook.** The `docs-check` hook in [`.pre-commit-config.yaml`](../../.pre-commit-config.yaml) runs `./docs/render.sh --check` when files under `docs/` are staged.
+6. **Pull-request template.** [`.github/pull_request_template.md`](../../.github/pull_request_template.md) includes the item *"UML, architecture and API docs updated for changed classes, flows or endpoints"*.
 7. **Traceability.** File names are numbered by diagram kind; each diagram names the Java classes it depicts. Consider an ArchUnit test that asserts the package dependencies in diagram 05.
 8. **Optional generation.** For the class diagrams, tools such as `plantuml-generator-maven-plugin` can emit a baseline from bytecode for diff-review against the curated diagrams here.
 
