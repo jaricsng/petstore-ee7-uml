@@ -1,0 +1,31 @@
+# Keeps dependencies current. Pull requests are grouped weekly to limit noise.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Singapore
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      maven-minor-patch:
+        update-types: [minor, patch]
+    # Java EE 7 (javax.*) APIs are pinned deliberately; Jakarta EE migration is ADR-0008.
+    ignore:
+      - dependency-name: "org.jboss.spec:jboss-javaee-7.0"
+      - dependency-name: "org.wildfly:*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Singapore
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions:
+        patterns: ["*"]

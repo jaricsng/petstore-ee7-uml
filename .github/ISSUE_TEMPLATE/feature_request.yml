@@ -1,0 +1,19 @@
+name: Feature or improvement
+description: Propose a feature, documentation improvement or design change.
+labels: ["enhancement", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or need
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+  - type: textarea
+    id: docs
+    attributes:
+      label: Affected documentation
+      description: Diagrams, ADRs or test cases that would change.

@@ -1,0 +1,6 @@
+# Code owners are requested for review automatically. Later matches take precedence.
+*                   @jaricsng
+/docs/              @jaricsng
+/.github/           @jaricsng
+/LICENSE            @jaricsng
+/NOTICE             @jaricsng
