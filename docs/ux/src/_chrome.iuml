@@ -1,0 +1,10 @@
+' Shared page chrome reverse-engineered from src/main/webapp/resources/templates/template.xhtml
+' (Bootstrap 3 fixed-top navbar, search form, footer). Used by every wireframe.
+!procedure $navbar($user)
+{* <b>Yaps Petstore EE 7</b> | Admin | Languages | $user | Shopping cart }
+{ "Search pets...          " | [Search] }
+!endprocedure
+!procedure $footer()
+..
+{ Source code on GitHub | Antonio Goncalves | Swagger Contract | Conversation [id] }
+!endprocedure

@@ -1,0 +1,86 @@
+@startuml 24-producer-factory-qualifier
+' @kind: Class (design pattern)
+' @summary: Factory Method through CDI @Produces with Qualifier-based dependency injection.
+!include ../_style.iuml
+allowmixing
+skinparam usecaseBorderStyle dashed
+skinparam usecaseBackgroundColor #FFFFFF
+mainframe **pkg** DesignPatterns::FactoryMethod
+left to right direction
+title Design Pattern - CDI @Produces methods/fields as Factory Methods, selected by Qualifiers
+
+usecase "fm : Factory Method" as FM
+usecase "di : Dependency Injection" as DI
+
+class LoggingProducer {
+  <<Produces>> + produceLogger(ip : InjectionPoint) : Logger
+}
+class DatabaseProducer {
+  <<Produces, PersistenceContext>> - em : EntityManager
+}
+class ConfigPropertyProducer {
+  + {static} produceConfigProperty(ip) : String <<Produces, ConfigProperty>>
+}
+class NumberProducer {
+  <<Produces, Vat>> - vatRate : Real
+  <<Produces, Discount>> - discountRate : Real
+}
+class LoginContextProducer {
+  <<Produces>> + produceLoginContext(@ConfigProperty file, @ConfigProperty module) : LoginContext
+}
+class AccountBean {
+  <<Produces, LoggedIn>> - loggedinCustomer : Customer
+}
+class LocaleBean {
+  <<Produces>> - locale : Locale
+}
+
+class Logger
+class EntityManager
+class LoginContext
+class Customer
+
+class "AbstractBean / LoggingInterceptor\n@Inject Logger" as C1
+class "CatalogService\n@Inject EntityManager" as C2
+class "AccountBean\n@Inject LoginContext" as C3
+class "ShoppingCartBean\n@Inject @LoggedIn Instance of Customer" as C4
+
+interface Vat <<interface>> <<Qualifier>>
+interface Discount <<interface>> <<Qualifier>>
+interface ConfigProperty <<interface>> <<Qualifier>>
+interface LoggedIn <<interface>> <<Qualifier>>
+
+LoggingProducer ..> Logger : <<create>>
+DatabaseProducer ..> EntityManager : <<create>>
+LoginContextProducer ..> LoginContext : <<create>>
+AccountBean ..> Customer : <<create>> @LoggedIn
+C1 ..> Logger : injects
+C2 ..> EntityManager : injects
+C3 ..> LoginContext : injects
+C4 ..> Customer : injects
+NumberProducer ..> Vat
+NumberProducer ..> Discount
+ConfigPropertyProducer ..> ConfigProperty
+LoginContextProducer ..> ConfigProperty
+C4 ..> LoggedIn
+
+FM .. "creator" LoggingProducer
+FM .. "creator" DatabaseProducer
+FM .. "creator" ConfigPropertyProducer
+FM .. "creator" NumberProducer
+FM .. "creator" LoginContextProducer
+FM .. "creator" AccountBean
+FM .. "creator" LocaleBean
+FM .. "product" Logger
+FM .. "product" EntityManager
+FM .. "product" LoginContext
+FM .. "product" Customer
+DI .. "client" C1
+DI .. "client" C2
+DI .. "client" C3
+DI .. "client" C4
+DI .. "qualifier" Vat
+DI .. "qualifier" Discount
+DI .. "qualifier" ConfigProperty
+DI .. "qualifier" LoggedIn
+@enduml

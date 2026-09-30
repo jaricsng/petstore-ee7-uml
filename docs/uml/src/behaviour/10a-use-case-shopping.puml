@@ -1,0 +1,99 @@
+@startuml 10a-use-case-shopping
+' @kind: Use Case
+' @summary: Shopping goals of Visitor and Customer with <<include>>, <<extend>>, extension points and extend conditions.
+!include ../_style.iuml
+left to right direction
+mainframe **uc** Shopping
+title Use Case Diagram (1/2) - Shopping: Visitor and Customer goals
+
+' ---------------------------------------------------------------------------
+' UML 2.5.1 clause 18 conformance
+'  * Actor-UseCase links are binary Associations: plain solid lines (18.2.1.4).
+'  * <<include>>: dashed open arrow FROM the including (base) use case TO the
+'    included use case (18.1.4).
+'  * <<extend>>: dashed open arrow FROM the extending use case TO the extended
+'    use case (18.1.4). The extended use case lists its ExtensionPoints in an
+'    "extension points" compartment; condition + extension point are shown in
+'    a note attached to the Extend arrow (Figure 18.3).
+'  * Subject is a rectangle named top-left with its keyword <<subsystem>>.
+' ---------------------------------------------------------------------------
+
+actor "Visitor" as visitor
+actor "Customer" as customer
+visitor <|-- customer
+
+rectangle "<<subsystem>>\n**PetStore**" as sys {
+  usecase UC01 as "Browse Catalogue
+  --
+  **extension points**
+  item listed : product's items shown"
+  usecase UC02 as "Search Items
+  --
+  **extension points**
+  result listed : search results shown"
+  usecase UC03 as "View Item Details
+  --
+  **extension points**
+  add to cart : item panel shown"
+  usecase UC04 as "Change Language"
+  usecase UC05 as "Create Account"
+  usecase UC06 as "Enter Customer Details"
+  usecase UC07 as "Sign In"
+  usecase UC08 as "Sign Out"
+  usecase UC09 as "View / Update Account"
+  usecase UC10 as "Add Item to Cart"
+  usecase UC11 as "View Shopping Cart
+  --
+  **extension points**
+  cart line : each cart line shown"
+  usecase UC12 as "Remove Item from Cart"
+  usecase UC13 as "Check Out"
+  usecase UC14 as "Enter Credit Card Details"
+}
+
+' ----- Associations (binary, plain lines) -----
+visitor -- UC01
+visitor -- UC02
+visitor -- UC04
+visitor -- UC05
+customer -- UC07
+customer -- UC08
+customer -- UC09
+customer -- UC11
+customer -- UC13
+
+' ----- Include: arrow points base -> addition -----
+UC05 ..> UC06 : <<include>>
+UC09 ..> UC06 : <<include>>
+UC13 ..> UC14 : <<include>>
+
+' ----- Extend: arrow points extension -> extended case -----
+' (written as "extended <.. extension" only to steer the layout; the
+'  arrowhead is still on the EXTENDED use case, as clause 18.1.4 requires)
+UC01 <.. UC03 : <<extend>>
+note on link
+  condition: {visitor selects an item}
+  extension point: item listed
+end note
+UC02 <.. UC03 : <<extend>>
+note on link
+  condition: {visitor selects a result}
+  extension point: result listed
+end note
+UC03 <.. UC10 : <<extend>>
+note on link
+  condition: {customer is signed in
+  and presses "Add to cart"}
+  extension point: add to cart
+end note
+UC11 <.. UC12 : <<extend>>
+note on link
+  condition: {customer presses "Remove"}
+  extension point: cart line
+end note
+
+note right of UC07
+  Finding SEC-01: the password is
+  never verified (see sd SignIn 13b).
+end note
+@enduml

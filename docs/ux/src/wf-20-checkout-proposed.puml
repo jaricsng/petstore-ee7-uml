@@ -1,0 +1,34 @@
+@startuml wf-20-checkout-proposed
+!include _chrome.iuml
+title Wireframe - PROPOSED - accessible single-page checkout (fixes SEC-05, BUG-02, UX-03..UX-07)
+salt
+{+
+$navbar("Welcome Anakin | Log out")
+==
+{ <b>(1) Delivery | --> | (2) Payment | --> | (3) Review }
+{
+  { <b>Delivery address
+    [X] Same as my account address
+    Street 1 (required) | "3 Wars Street     "
+    City (required)     | "Black Star        "
+    Postal code (required) | "9999          "
+    Country (required)  | ^Venezuela       ^
+  } | . | { <b>Order summary
+    Angelfish Large x2 | 20.00
+    Tiger Shark Spotted x1 | 12.00
+    --
+    Subtotal | 32.00
+    Discount (5%) | -1.60
+    VAT (20%) | 6.08
+    ==
+    <b>Total | <b>36.48
+  }
+}
+{ <b>Payment - hosted by payment provider (card data never reaches PetStore)
+  { "Card number (PSP iframe)          " }
+  { "MM/YY (PSP)" | "CVC (PSP)" }
+}
+{ [Back to cart] | [Place order - pay 36.48] }
+$footer()
+}
+@enduml

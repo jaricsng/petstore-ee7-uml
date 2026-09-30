@@ -1,0 +1,67 @@
+@startuml 11a-activity-checkout
+' @kind: Activity
+' @summary: Browse, add to cart, check out and confirm order with swimlanes, decisions and a loop.
+!include ../_style.iuml
+mainframe **act** PurchasePets
+title Activity Diagram - Browse, add to cart, check out and confirm order
+
+|Customer|
+start
+repeat
+  :Select category from menu;
+  |CatalogBean|
+  :doFindProducts()\nfindProducts(categoryName);
+  |Customer|
+  :Select product;
+  |CatalogBean|
+  :doFindItems()\nfindProduct(id), findItems(id);
+  |Customer|
+  :Select item and press "Add to cart";
+  |ShoppingCartBean|
+  :item = catalog.findItem(itemId);
+  if (conversation.isTransient()?) then ([yes])
+    :cartItems = new ArrayList();
+    :conversation.begin();
+  else ([no])
+  endif
+  if (item already in cart?) then ([yes])
+    :quantity = quantity + 1;
+  else ([no])
+    :cartItems.add(new ShoppingCartItem(item, 1));
+  endif
+  |Customer|
+repeat while (continue shopping?) is ([yes]) not ([no])
+:Press "Check out";
+|ShoppingCartBean|
+:checkout() -> confirmorder.xhtml;
+|Customer|
+:Enter credit card number, type, expiry;
+:Press "Confirm";
+|ShoppingCartBean|
+:confirmOrder();
+|PurchaseOrderService|
+:LoggingInterceptor @AroundInvoke\n(entering createOrder);
+:JTA transaction begins\n(container-managed REQUIRED);
+if (cartItems empty?) then ([yes])
+  :throw ValidationException\n"Shopping cart is empty";
+  :JTA rollback\n(RuntimeException = system exception,\nwrapped in EJBException);
+  |ShoppingCartBean|
+  :ExceptionInterceptor adds\nFacesMessage SEVERITY_ERROR;
+  |Customer|
+  :See error message;
+  stop
+else ([no])
+  |PurchaseOrderService|
+  :resolve Country; merge Customer;
+  :new PurchaseOrder(customer, creditCard, deliveryAddress);
+  :for each cartItem\ncreate OrderLine(quantity, merge(item));
+  :entityManager.persist(order)\n@PrePersist orderDate = now;
+  :JTA commit;
+endif
+|ShoppingCartBean|
+:cartItems.clear();
+:conversation.end();
+|Customer|
+:View order confirmation\n(orderconfirmed.xhtml);
+stop
+@enduml

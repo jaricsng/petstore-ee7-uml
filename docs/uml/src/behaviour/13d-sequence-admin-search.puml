@@ -1,0 +1,47 @@
+@startuml 13d-sequence-admin-search
+' @kind: Sequence
+' @summary: Admin CRUD with a CDI conversation and an EXTENDED persistence context.
+!include ../_style.iuml
+mainframe **sd** AdminSearchAndEdit
+title Sequence Diagram - Admin CRUD with conversation-scoped extended persistence context
+
+actor ":Administrator" as a
+participant ":FacesServlet" as fs
+participant "bean :\nCategoryBean" as b <<Stateful, ConversationScoped>>
+participant ":Conversation" as conv
+participant "em :\nEntityManager" as em
+participant "db :\nPetstorePU" as db
+note over em : extended persistence context
+
+a -> fs : GET admin/category/search.xhtml
+fs -> b : paginate()
+note right: f:event preRenderView
+b -> em : count(criteria with example predicates)
+em -> db : SELECT COUNT(*)
+b -> em : createQuery(criteria).setFirstResult(page*10).setMaxResults(10)
+em -> db : SELECT ... LIMIT 10
+b --> fs : paginate : pageItems, count
+fs --> a : GET : table (10 rows / page)
+
+a -> fs : GET view.xhtml?id=1001
+fs -> b : retrieve()
+alt conversation.isTransient()
+  b -> conv : begin()
+  b -> conv : setTimeout(1 800 000 ms)
+end
+b -> em : find(Category, id)
+em --> b : find : category (managed across requests)
+fs --> a : GET : view page
+
+a -> fs : POST edit -> update()
+fs -> b : update()
+b -> conv : end()
+alt id == null
+  b -> em : persist(category)
+else
+  b -> em : merge(category)
+end
+em -> db : flush on commit
+b --> fs : update : "view?faces-redirect=true&id=.."
+fs --> a : POST : 302 redirect
+@enduml

@@ -1,0 +1,17 @@
+@startuml wf-11-order-confirmed
+!include _chrome.iuml
+title Wireframe - Order confirmed - orderconfirmed.xhtml (UC13 result)
+salt
+{+
+$navbar("Welcome Anakin | Log out")
+==
+<b>Your order is complete
+{#
+  <b>Item | <b>Quantity | <b>Unit cost | <b>Sub total
+  <b>Angelfish</b> Large | 2 | 10.00 | 20.00
+  <b>Tiger Shark</b> Spotted | 1 | 12.00 | 12.00
+}
+<color:#B00020>No order number, total, VAT or delivery date shown (BUG-02)</color>
+$footer()
+}
+@enduml

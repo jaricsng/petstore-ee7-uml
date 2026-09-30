@@ -1,0 +1,58 @@
+@startuml 22-interceptor
+' @kind: Class (design pattern)
+' @summary: Interceptor pattern via CDI @InterceptorBinding (@Loggable, @CatchException).
+!include ../_style.iuml
+allowmixing
+skinparam usecaseBorderStyle dashed
+skinparam usecaseBackgroundColor #FFFFFF
+mainframe **pkg** DesignPatterns::Interceptor
+title Design Pattern - CDI Interceptors bound through @InterceptorBinding annotations
+
+usecase "log : Interceptor" as P1
+usecase "err : Interceptor" as P2
+
+interface Loggable <<interface>> <<InterceptorBinding>>
+interface CatchException <<interface>> <<InterceptorBinding>>
+class LoggingInterceptor <<Interceptor>> {
+  - logger : Logger
+  <<AroundInvoke>> - intercept(ic : InvocationContext) : Object
+}
+class ExceptionInterceptor <<Interceptor>> {
+  <<AroundInvoke>> + catchException(ic : InvocationContext) : Object
+}
+interface InvocationContext <<interface>> {
+  + getTarget() : Object
+  + getMethod() : Method
+  + proceed() : Object
+}
+class "CDI container proxy" as Proxy
+class "@Loggable targets\n(all services, beans, endpoints)" as T1
+class "@CatchException targets\n(AccountBean, CatalogBean,\nShoppingCartBean, DebugBean)" as T2
+class "beans.xml <interceptors>" as BX <<deployment spec>>
+
+LoggingInterceptor ..> Loggable : binds
+ExceptionInterceptor ..> CatchException : binds
+T1 ..> Loggable : annotated with
+T2 ..> CatchException : annotated with
+Proxy --> LoggingInterceptor : 1. around
+Proxy --> ExceptionInterceptor : 1. around
+LoggingInterceptor ..> InvocationContext : proceed()
+ExceptionInterceptor ..> InvocationContext : proceed()
+InvocationContext ..> T1 : 2. target
+BX ..> LoggingInterceptor : enables (order 1)
+BX ..> ExceptionInterceptor : enables (order 2)
+
+P1 .. "interceptor" LoggingInterceptor
+P1 .. "proxy" Proxy
+P1 .. "binding" Loggable
+P1 .. "target" T1
+P2 .. "interceptor" ExceptionInterceptor
+P2 .. "proxy" Proxy
+P2 .. "target" T2
+
+note bottom of ExceptionInterceptor
+  Swallows every Exception, adds a FacesMessage
+  and returns null (stay on page). Trade-off:
+  user-friendly but hides root cause from callers.
+end note
+@enduml

@@ -1,0 +1,27 @@
+@startuml wf-07-create-account
+!include _chrome.iuml
+title Wireframe - Create account - createaccount.xhtml (UC05, includes UC06 Enter Customer Details)
+salt
+{+
+$navbar("Log in")
+==
+<b>Create account
+{
+  <b>Personal information | .
+  First name* | "          "
+  Last name*  | "          "
+  E-mail      | "          "
+  Telephone   | "          "
+  Date of birth | "dd/MM/yyyy"
+  <b>Address | .
+  Street 1*   | "          "
+  Street 2    | "          "
+  City*       | "          "
+  State       | "          "
+  Zip code*   | "          "
+  Country*    | ^Venezuela      ^
+  [Submit] | .
+}
+$footer()
+}
+@enduml

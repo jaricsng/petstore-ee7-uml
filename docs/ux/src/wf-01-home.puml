@@ -1,0 +1,17 @@
+@startuml wf-01-home
+!include _chrome.iuml
+title Wireframe - Home - main.xhtml (UC01 Browse Catalogue)
+salt
+{+
+$navbar("Log in")
+==
+<b>YAPS PetStore
+{+
+  .         | "   Birds   " | .
+  " Fish  " | <&image> splash.gif (image map) | " Dogs  "
+  "Reptiles"| "   Cats    " | .
+}
+<i>Each hotspot links to showproducts.xhtml?categoryName=...
+$footer()
+}
+@enduml

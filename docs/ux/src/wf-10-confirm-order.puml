@@ -1,0 +1,30 @@
+@startuml wf-10-confirm-order
+!include _chrome.iuml
+title Wireframe - Confirm order - confirmorder.xhtml (UC13 Check Out, includes UC14)
+salt
+{+
+$navbar("Welcome Anakin | Log out")
+==
+<b>Confirm order
+{
+  <b>Personal information | .
+  First name | "Anakin (read-only)"
+  Last name  | "Skywalker (ro)"
+  E-mail     | "anakin@... (ro)"
+  <b>Delivery address | .
+  Street 1* | "3 Wars Street"
+  Street 2  | "          "
+  City*     | "Black Star"
+  State     | "          "
+  Zip code* | "9999      "
+  Country*  | ^Venezuela      ^
+  <b>Credit card | .
+  Card number* | "4111111111111111"
+  Card type*   | ^VISA ^
+  Expiry (MM/YY)* | "12/28 "
+  [Submit] | .
+}
+<color:#B00020>Editing the delivery address overwrites the customer's home address; PAN in clear (SEC-05)</color>
+$footer()
+}
+@enduml

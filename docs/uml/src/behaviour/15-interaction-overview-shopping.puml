@@ -1,0 +1,54 @@
+@startuml 15-interaction-overview-shopping
+' @kind: Interaction Overview
+' @summary: End-to-end shopping journey as an activity flow of interaction uses (ref) and inline interactions.
+!include ../_style.iuml
+mainframe **sd** ShoppingJourney lifelines :Customer, :FacesServlet, catalog:CatalogBean, acct:AccountBean,\n cart:ShoppingCartBean, :CatalogService, :CustomerService, :PurchaseOrderService
+title Interaction Overview Diagram - End-to-end shopping journey (activity flow of interaction uses)
+
+start
+:**ref**
+BrowseCatalogue;
+if (Signed in?) then ([yes])
+elseif (has account?) then ([yes])
+  :**ref**
+SignIn;
+else ([no])
+  :**ref**
+  CreateAccount;
+endif
+repeat
+  :**ref**
+AddItemToCart;
+  :**sd** ViewCart
+  --
+  customer -> cart : showcart.xhtml
+  cart --> customer : cartItems, total;
+repeat while (more items?) is ([yes]) not ([no])
+if (checkout?) then ([yes])
+  :**ref**
+ConfirmOrder;
+  if (ValidationException?) then ([yes])
+    :**sd** ShowError
+    --
+    ExceptionInterceptor -> FacesContext : addMessage(SEVERITY_ERROR);
+    stop
+  else ([no])
+  endif
+else ([abandon])
+  :**ref**
+  SignOut;
+endif
+stop
+
+legend right
+  **Traceability of InteractionUses (ref)**
+  |= ref |= Referred Interaction |= Diagram file |
+  | BrowseCatalogue | sd BrowseCatalogue | 13e-sequence-browse-catalogue |
+  | SignIn | sd SignIn | 13b-sequence-sign-in |
+  | CreateAccount | sd CreateAccount | 13f-sequence-create-account |
+  | AddItemToCart | sd AddItemToCart | 14-communication-add-to-cart |
+  | ConfirmOrder | sd ConfirmOrder | 13a-sequence-confirm-order |
+  | SignOut | sd SignOut | 13g-sequence-sign-out |
+  | ViewCart, ShowError | inline Interactions | defined in this diagram |
+endlegend
+@enduml

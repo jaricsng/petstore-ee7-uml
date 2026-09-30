@@ -1,0 +1,118 @@
+@startuml 29-target-state-patterns
+' @kind: Class (design patterns)
+' @summary: Recommended target-state patterns that resolve the findings: DTO/Mapper, Specification, Strategy (PasswordHash), IdentityStore, Decorator pricing chain, Ports and Adapters for payment.
+!include ../_style.iuml
+allowmixing
+skinparam usecaseBorderStyle dashed
+skinparam usecaseBackgroundColor #FFFFFF
+mainframe **pkg** DesignPatterns::TargetState
+title Design Patterns - Recommended target state (each pattern closes a finding)
+
+usecase "dto : Data Transfer Object + Mapper\n(closes SEC-04, ARCH-02)" as DTO
+usecase "spec : Specification\n(closes BUG-01)" as SPEC
+usecase "hash : Strategy\n(closes SEC-03)" as STR
+usecase "ids : Identity Store\n(closes SEC-01, SEC-02)" as IDS
+usecase "dec : Decorator\n(closes BUG-02)" as DEC
+usecase "pa : Ports and Adapters\n(closes SEC-05)" as PA
+
+package "api.v1" as apiv1 {
+  class CategoryResource <<Path>> {
+    + list(page : Integer, size : Integer) : Page<CategoryDto>
+    + get(id : Long) : CategoryDto
+    + create(dto : CategoryCreateDto) : Response
+  }
+  class CategoryDto {
+    + id : Long
+    + name : String
+    + description : String
+    + version : Integer
+  }
+  interface CategoryMapper <<interface>> {
+    + toDto(c : Category) : CategoryDto
+    + toEntity(d : CategoryCreateDto) : Category
+  }
+}
+
+package "catalog" as cat {
+  interface "Specification<T>" as Spec <<interface>> {
+    + toPredicate(root, query, cb) : Predicate
+    + and(other : Specification<T>) : Specification<T>
+    + or(other : Specification<T>) : Specification<T>
+  }
+  class OrderSpecs <<utility>> {
+    + {static} deliveryCityLike(city : String) : Specification<PurchaseOrder>
+    + {static} deliveryZipLike(zip : String) : Specification<PurchaseOrder>
+  }
+  interface "Repository<T>" as Repo <<interface>> {
+    + findAll(spec : Specification<T>, page : PageRequest) : Page<T>
+  }
+}
+
+package "security" as sec {
+  interface IdentityStore <<interface>> {
+    + validate(c : UsernamePasswordCredential) : CredentialValidationResult
+  }
+  class PetStoreIdentityStore <<ApplicationScoped>>
+  interface PasswordHash <<interface>> {
+    + generate(password : char[*]) : String
+    + verify(password : char[*], hashed : String) : Boolean
+  }
+  class Pbkdf2PasswordHash {
+    iterations = 210000
+    algorithm = PBKDF2WithHmacSHA512
+  }
+}
+
+package "ordering" as ord {
+  interface PriceCalculator <<interface>> {
+    + price(order : PurchaseOrder) : Money
+  }
+  class LineTotalCalculator
+  abstract class VatDecorator <<Decorator>> {
+    <<Inject, Delegate>> - delegate : PriceCalculator
+    <<Inject, Vat>> - vatRate : Real
+  }
+  abstract class DiscountDecorator <<Decorator>> {
+    <<Inject, Delegate>> - delegate : PriceCalculator
+    <<Inject, Discount>> - discountRate : Real
+  }
+  interface PaymentGateway <<interface>> {
+    + authorise(orderId, amount : Money, token : String) : PaymentResult
+  }
+  class PspPaymentAdapter
+  class FakePaymentAdapter 
+}
+
+CategoryResource ..> CategoryMapper
+CategoryMapper ..> CategoryDto : <<create>>
+Repo ..> Spec
+OrderSpecs ..> Spec : <<create>>
+IdentityStore <|.. PetStoreIdentityStore
+PetStoreIdentityStore ..> PasswordHash : verify()
+PasswordHash <|.. Pbkdf2PasswordHash
+PriceCalculator <|.. LineTotalCalculator
+PriceCalculator <|.. VatDecorator
+PriceCalculator <|.. DiscountDecorator
+VatDecorator o--> PriceCalculator
+DiscountDecorator o--> PriceCalculator
+PaymentGateway <|.. PspPaymentAdapter
+PaymentGateway <|.. FakePaymentAdapter
+
+DTO .. "dto" CategoryDto
+DTO .. "assembler" CategoryMapper
+SPEC .. "specification" Spec
+SPEC .. "factory" OrderSpecs
+STR .. "strategy" PasswordHash
+STR .. "concreteStrategy" Pbkdf2PasswordHash
+IDS .. "identityStore" PetStoreIdentityStore
+DEC .. "component" PriceCalculator
+DEC .. "concreteComponent" LineTotalCalculator
+DEC .. "decorator" VatDecorator
+DEC .. "decorator" DiscountDecorator
+PA .. "port" PaymentGateway
+PA .. "adapter" PspPaymentAdapter
+PA .. "adapter" FakePaymentAdapter
+note bottom of FakePaymentAdapter : test double (test scope only)
+CategoryDto -[hidden]down- IdentityStore
+Spec -[hidden]down- PriceCalculator
+@enduml

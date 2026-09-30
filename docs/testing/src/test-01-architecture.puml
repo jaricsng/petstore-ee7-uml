@@ -1,0 +1,42 @@
+@startuml test-01-architecture
+' Test architecture: levels (test pyramid), tools, environments and CI quality gates
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam rectangleBorderColor #2F5D8A
+skinparam ArrowColor #333333
+skinparam packageStyle rectangle
+title Test architecture - levels, tools and CI quality gates (target)
+
+package "CI pipeline (GitHub Actions) - every pull request" as ci {
+  rectangle "Gate 0 - Pre-commit / static\nSpotless format, gitleaks (secrets),\nSpotBugs + FindSecBugs (SAST), Semgrep,\nPlantUML + docs check (render.sh --check)" as g0 #FFFFFF
+  rectangle "Gate 1 - Unit tests (TC-UNIT)\nJUnit 5, Mockito, AssertJ, EqualsVerifier\nJaCoCo line >= 80%, branch >= 70%\nPIT mutation score >= 60% (model, service)" as g1 #E8F4EA
+  rectangle "Gate 2 - Architecture and governance (TC-GOV)\nArchUnit layer rules, license-maven-plugin allow-list,\nCycloneDX SBOM, OWASP Dependency-Check (CVSS >= 7 fails),\nconftest/OPA on Dockerfile and K8s manifests" as g2 #EEF2FB
+  rectangle "Gate 3 - Integration (TC-INT)\nArquillian + WildFly managed, Testcontainers PostgreSQL\nJPA mappings, Bean Validation, EJB transactions" as g3 #E8F4EA
+  rectangle "Gate 4 - API contract (TC-API)\nREST Assured, OpenAPI schema validation,\nSchemathesis property-based fuzzing" as g4 #E8F4EA
+  rectangle "Gate 5 - End-to-end UI (TC-E2E, TC-A11Y)\nPlaywright for Java (Chromium, WebKit, Firefox),\naxe-core accessibility scan, visual snapshots" as g5 #FFF8E1
+  rectangle "Gate 6 - DAST (TC-SEC)\nOWASP ZAP baseline on every PR,\nZAP full scan + API scan nightly" as g6 #FDECEC
+}
+package "Scheduled / release" as rel {
+  rectangle "Performance (TC-PERF)\nGatling: 50 users browse, 10 checkout/min\np95 < 300 ms, error rate < 1%" as perf #FFFFFF
+  rectangle "Manual penetration test (TC-SEC-M)\nOWASP WSTG v4.2 checklist, ASVS 5.0 L2\nbefore each major release" as pen #FFFFFF
+  rectangle "Audit evidence (TC-AUD)\ntest reports, SBOM, ZAP report,\ncoverage, signed tag archived per release" as aud #FFFFFF
+}
+
+g0 -down-> g1
+g1 -down-> g2
+g2 -down-> g3
+g3 -down-> g4
+g4 -down-> g5
+g5 -down-> g6
+g6 -right-> perf : release candidate
+perf -down-> pen
+pen -down-> aud
+
+note right of g1
+  **Test pyramid** (Cohn): many fast unit tests,
+  fewer integration and API tests, very few E2E.
+  Current state: 9 unit classes (equals/hashCode only),
+  25 Arquillian IT classes (skipped by default:
+  skipITs=true), 0 E2E, 0 security, no coverage tool.
+end note
+@enduml

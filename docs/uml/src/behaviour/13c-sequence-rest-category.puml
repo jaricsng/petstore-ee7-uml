@@ -1,0 +1,64 @@
+@startuml 13c-sequence-rest-category
+' @kind: Sequence
+' @summary: REST create/read/update/delete of categories including 201/404/409 responses.
+!include ../_style.iuml
+mainframe **sd** RestCategoryCrud
+title Sequence Diagram - REST resource lifecycle for /rest/categories (JAX-RS + JPA)
+
+actor ":REST API Client" as c
+participant ":RESTEasy\n(JAX-RS runtime)" as rt
+participant ":LoggingInterceptor" as li
+participant ":CategoryEndpoint" as ep <<Stateless>>
+participant "em :\nEntityManager" as em
+participant "db :\nPetstorePU" as db
+
+== Create ==
+c -> rt : POST /rest/categories\n{name, description}
+rt -> li : create(entity)
+li -> ep : proceed()
+ep -> em : persist(entity)
+em -> db : INSERT category
+ep --> li : proceed : 201 Created\nLocation: /categories/{id}
+li --> rt : create : 201 Created
+rt --> c : POST : 201 Created
+
+== Read ==
+c -> rt : GET /rest/categories/{id}
+rt -> ep : findById(id)
+ep -> em : createQuery("SELECT DISTINCT c ...").getSingleResult()
+alt found
+  ep --> rt : findById : 200 OK (Category JSON/XML)
+else NoResultException
+  ep --> rt : findById : 404 Not Found
+end
+rt --> c : GET : response
+
+== Update (optimistic locking) ==
+c -> rt : PUT /rest/categories/{id}\n{id, version, ...}
+rt -> ep : update(entity)
+ep -> em : merge(entity)
+alt version matches
+  em -> db : UPDATE ... WHERE id=? AND version=?
+  ep --> rt : update : 204 No Content
+else OptimisticLockException
+  ep --> rt : update : 409 Conflict (stale entity)
+end
+rt --> c : PUT : response
+
+== Delete ==
+c -> rt : DELETE /rest/categories/{id}
+rt -> ep : deleteById(id)
+ep -> em : find(Category, id)
+alt null
+  ep --> rt : deleteById : 404 Not Found
+else exists
+  ep -> em : remove(entity)
+  ep --> rt : deleteById : 204 No Content
+end
+rt --> c : DELETE : response
+
+note over c, db
+  No authentication, authorisation or rate limiting on any /rest/** resource
+  (Finding SEC-02). CustomerEndpoint serialises the password hash (SEC-04).
+end note
+@enduml

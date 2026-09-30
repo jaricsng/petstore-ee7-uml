@@ -1,0 +1,146 @@
+@startuml 03-class-presentation-rest
+' @kind: Class
+' @summary: Presentation and REST boundary: JSF backing beans (shopping and admin) and JAX-RS endpoints.
+!include ../_style.iuml
+mainframe **pkg** petstore
+title Class Diagram - JSF Backing Beans and JAX-RS Endpoints
+
+package view {
+  abstract class AbstractBean <<Loggable>> {
+    <<Inject>> - logger : Logger
+    # addInformationMessage(key : String, args : Object [*])
+    # addWarningMessage(key : String, args : Object [*])
+    # addErrorMessage(key : String, args : Object [*])
+    # getParam(name : String) : String
+    # getParamId(name : String) : Long
+  }
+  interface CatchException <<interface>> <<InterceptorBinding>>
+  interface LoggedIn <<interface>> <<Qualifier>>
+  class ExceptionInterceptor <<Interceptor>> <<CatchException>> {
+    <<AroundInvoke>> + catchException(ic : InvocationContext) : Object
+  }
+  class LocaleBean <<Named>> <<SessionScoped>> {
+    <<Produces>> - locale : Locale
+    + getLanguage() : String
+    + setLanguage(language : String)
+  }
+  class DebugBean <<Named>> <<RequestScoped>> {
+    + getThreadStack() : String [*]
+    + getWorkingDirectory() : String
+    + getTotalMemory() : String
+    + getFreeMemory() : String
+  }
+  class ViewUtils <<utility>> {
+    + {static} asList(c : Collection<T>) : T [*]
+    + {static} display(o : Object) : String
+  }
+}
+
+package "view.shopping" as shopping {
+  class AccountBean <<Named>> <<SessionScoped>> {
+    <<Produces, LoggedIn>> - loggedinCustomer : Customer [0..1]
+    <<Inject>> - loginContext : LoginContext
+    + doLogin() : String
+    + doCreateNewAccount() : String
+    + doCreateCustomer() : String
+    + doLogout() : String
+    + doUpdateAccount() : String
+    + isLoggedIn() : Boolean
+  }
+  class CatalogBean <<Named>> <<SessionScoped>> {
+    - categoryName : String
+    - productId : Long
+    - itemId : Long
+    - keyword : String
+    + doFindProducts() : String
+    + doFindItems() : String
+    + doFindItem() : String
+    + doSearch() : String
+  }
+  class ShoppingCartBean <<Named>> <<ConversationScoped>> {
+    - loggedInCustomer : Instance<Customer> <<Inject, LoggedIn>>
+    + addItemToCart() : String
+    + removeItemFromCart() : String
+    + updateQuantity() : String
+    + checkout() : String
+    + confirmOrder() : String
+    + shoppingCartIsEmpty() : Boolean
+    + getTotal() : Real {query}
+    + getCreditCardTypes() : CreditCardType [*]
+  }
+  class CredentialsBean <<Named>> <<SessionScoped>> {
+    - login : String
+    - password : String
+    - password2 : String
+  }
+  class ShoppingCartItem {
+    - item : Item [1]
+    - quantity : Integer [1] {>= 1}
+    + getSubTotal() : Real {query}
+  }
+}
+
+package "view.admin" as admin {
+  class "<Entity>Bean" as EntityBean <<Named>> <<Stateful>> <<ConversationScoped>> {
+    - id : Long
+    - example : <Entity>
+    - page : Integer
+    - count : Long
+    <<PersistenceContext>> {type = EXTENDED} - entityManager : EntityManager
+    + create() : String
+    + retrieve()
+    + update() : String
+    + delete() : String
+    + search() : String
+    + paginate()
+    + getAll() : <Entity> [*]
+    + getConverter() : Converter
+  }
+  note bottom of EntityBean
+    Template bound 7 times (JBoss Forge scaffold):
+    CategoryBean, CountryBean, CustomerBean, ItemBean,
+    OrderLineBean, ProductBean, PurchaseOrderBean
+  end note
+}
+
+package rest {
+  class RestApplication <<ApplicationPath>>
+  class "<Entity>Endpoint" as Endpoint <<Stateless>> <<Path>> {
+    <<PersistenceContext>> - em : EntityManager
+    <<POST>> + create(entity) : Response
+    <<DELETE, Path>> {value = "/{id}"} + deleteById(id : Long) : Response
+    <<GET, Path>> {value = "/{id}"} + findById(id : Long) : Response
+    + listAll(start : Integer, max : Integer) : <Entity> [*] <<GET>>
+    <<PUT, Path>> {value = "/{id}"} + update(entity) : Response
+  }
+  note bottom of Endpoint
+    Bound 5 times: /categories, /countries,
+    /customers, /items, /products
+  end note
+  class "javax.ws.rs.core.Application" as Application
+}
+
+class CatalogService <<Stateless>>
+class CustomerService <<Stateless>>
+class PurchaseOrderService <<Stateless>>
+class Conversation
+
+AbstractBean <|-- AccountBean
+AbstractBean <|-- CatalogBean
+AbstractBean <|-- ShoppingCartBean
+AbstractBean <|-- DebugBean
+Application <|-- RestApplication
+
+AccountBean --> "1" CustomerService
+AccountBean --> "1 +credentials" CredentialsBean
+AccountBean --> "1" Conversation
+CatalogBean --> "1" CatalogService
+ShoppingCartBean --> "1 +catalogBean" CatalogService
+ShoppingCartBean --> "1 +orderBean" PurchaseOrderService
+ShoppingCartBean --> "1" Conversation
+ShoppingCartBean *--> "0..* +cartItems {ordered}" ShoppingCartItem
+ShoppingCartBean ..> AccountBean : <<use>> @LoggedIn Customer
+EntityBean --> "1" Conversation
+ExceptionInterceptor ..> CatchException : binds
+AccountBean ..> LoggedIn
+@enduml

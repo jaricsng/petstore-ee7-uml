@@ -1,0 +1,16 @@
+@startuml wf-03-items
+!include _chrome.iuml
+title Wireframe - Items of a product - showitems.xhtml (UC01)
+salt
+{+
+$navbar("Log in")
+==
+<b>Items for product : Angelfish
+{#
+  <b>Image | <b>Item | <b>Unit cost
+  <&image> | Large | 10.00 $
+  <&image> | Thootless | 10.00 $
+}
+$footer()
+}
+@enduml

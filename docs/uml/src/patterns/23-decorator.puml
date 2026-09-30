@@ -1,0 +1,45 @@
+@startuml 23-decorator
+' @kind: Class (design pattern)
+' @summary: CDI Decorator for purchase-order computation (declared, not yet implemented).
+!include ../_style.iuml
+allowmixing
+skinparam usecaseBorderStyle dashed
+skinparam usecaseBackgroundColor #FFFFFF
+mainframe **pkg** DesignPatterns::Decorator
+title Design Pattern - Decorator for purchase-order computation (declared, not yet implemented)
+
+usecase "dec : Decorator" as P
+
+interface ComputablePurchaseOrder <<interface>> {
+  .. no operations declared ..
+}
+class "(missing) PurchaseOrderCalculator" as Concrete #line.dashed
+abstract class PurchaseOrderDecorator <<Decorator>> {
+  <<Inject, Delegate>> - delegate : ComputablePurchaseOrder
+}
+class NumberProducer {
+  <<Produces, Vat>> - vatRate : Real
+  <<Produces, Discount>> - discountRate : Real
+}
+
+ComputablePurchaseOrder <|.. Concrete
+ComputablePurchaseOrder <|.. PurchaseOrderDecorator
+PurchaseOrderDecorator o--> "1 +delegate" ComputablePurchaseOrder
+PurchaseOrderDecorator ..> NumberProducer : <<use>> @Vat, @Discount (intended)
+
+P .. "component" ComputablePurchaseOrder
+P .. "decorator" PurchaseOrderDecorator
+P .. "concreteComponent" Concrete
+
+note right of PurchaseOrderDecorator
+  **Intended design** (per EE7 book sample):
+  computeTotal(order) {
+    total = delegate.computeTotal(order)
+    apply @Vat vatRate, @Discount discountRate
+  }
+  **Current state**: interface empty, decorator not
+  listed in beans.xml <decorators>, NumberProducer
+  fields never initialised -> PurchaseOrder totals null
+  (Finding BUG-02).
+end note
+@enduml

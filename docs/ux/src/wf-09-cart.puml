@@ -1,0 +1,18 @@
+@startuml wf-09-cart
+!include _chrome.iuml
+title Wireframe - Shopping cart - showcart.xhtml (UC11 View Shopping Cart, UC12 Remove Item)
+salt
+{+
+$navbar("Welcome Anakin | Log out")
+==
+<b>Shopping cart
+{#
+  <b>Item | . | <b>Qty | <b>Unit cost | <b>Sub total | .
+  Angelfish Large | Update | "2 " | 10.00 $ | 20.00 $ | Remove
+  Tiger Shark Spotted | Update | "1 " | 12.00 $ | 12.00 $ | Remove
+}
+{ Total $ 32.00 | [Check Out] }
+<i>"Update" is a no-op in code (updateQuantity returns null)
+$footer()
+}
+@enduml

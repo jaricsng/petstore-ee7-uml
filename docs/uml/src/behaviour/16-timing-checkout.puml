@@ -1,0 +1,51 @@
+@startuml 16-timing-checkout
+' @kind: Timing
+' @summary: State timelines of session, conversation, cart size, JTA transaction and interceptor with duration constraints.
+!include ../_style.iuml
+mainframe **sd** CheckoutTiming
+title Timing Diagram - State of session, conversation, cart and JTA transaction during a purchase
+
+robust "HTTP Session\n(AccountBean)" as S
+robust "Conversation\n(ShoppingCartBean)" as C
+concise "cartItems.size()" as N
+robust "JTA Transaction\n(PurchaseOrderService)" as T
+binary "LoggingInterceptor\nactive" as L
+
+@0
+S is Anonymous
+C is Transient
+N is "null"
+T is None
+L is low
+
+@10
+S is Authenticated
+@20
+C is LongRunning
+N is 1
+@25
+N is 2
+@30
+N is 3
+@40
+C is CheckingOut
+@50
+C -> T : createOrder(..)
+T is Active
+L is high
+@53
+T is Committed
+L is low
+@55
+C is Transient
+N is 0
+T is None
+@80
+S is Anonymous
+
+S@10 <-> @80 : {0..30 min idle} session-timeout (web.xml)
+C@20 <-> @55 : {0..conversation timeout} (CDI default)
+T@50 <-> @53 : {d..3*d}
+
+note bottom of T : d = observed duration of persist(order) + commit
+@enduml

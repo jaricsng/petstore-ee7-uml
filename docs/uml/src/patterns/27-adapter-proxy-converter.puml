@@ -1,0 +1,51 @@
+@startuml 27-adapter-proxy-converter
+' @kind: Class (design pattern)
+' @summary: Adapter (anonymous JSF Converter) and Proxy (EJB business object).
+!include ../_style.iuml
+allowmixing
+skinparam usecaseBorderStyle dashed
+skinparam usecaseBackgroundColor #FFFFFF
+mainframe **pkg** DesignPatterns::AdapterProxy
+title Design Pattern - Anonymous JSF Converter adapts entities to request strings via an EJB business proxy
+
+usecase "ad : Adapter" as AD
+usecase "px : Proxy" as PX
+
+interface "javax.faces.convert.Converter" as Converter <<interface>> {
+  + getAsObject(ctx, comp, value : String) : Object
+  + getAsString(ctx, comp, value : Object) : String
+}
+class "CategoryBean$1\n(anonymous)" as Anon {
+  - ejbProxy : CategoryBean
+}
+class CategoryBean <<Stateful>> {
+  + findById(id : Long) : Category
+  + getConverter() : Converter
+}
+class SessionContext {
+  + getBusinessObject(c : Class) : Object
+}
+class "CategoryBean business proxy" as BP
+class "h:selectOneMenu\n(Product.category)" as UI
+
+Converter <|.. Anon
+Anon --> "1 +ejbProxy" BP
+BP ..> CategoryBean : forwards (tx, security, conversation)
+CategoryBean ..> SessionContext : getBusinessObject(CategoryBean.class)
+SessionContext ..> BP : <<create>>
+CategoryBean ..> Anon : <<create>>
+UI --> Converter : String <-> Category
+
+AD .. "client" UI
+AD .. "target" Converter
+AD .. "adapter" Anon
+AD .. "adaptee" CategoryBean
+PX .. "proxy" BP
+PX .. "realSubject" CategoryBean
+
+note right of Anon
+  Repeated in all 7 admin beans (Forge scaffold);
+  a single generic @FacesConverter(forClass=...)
+  would remove the duplication.
+end note
+@enduml

@@ -1,0 +1,51 @@
+@startuml flow-00-screen-flow
+' Screen flow (navigation map) derived from h:link outcomes, action return values and f:viewParam in *.xhtml.
+' Not a UML diagram: boxes are screens (Facelets views), arrows are user-triggered navigations.
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam StateBackgroundColor #F7FAFD
+skinparam StateBorderColor #2F5D8A
+skinparam ArrowColor #333333
+hide empty description
+title Screen flow - storefront and admin navigation (as built)
+
+state "Home\nmain.xhtml" as main
+state "Products\nshowproducts.xhtml?categoryName" as prods
+state "Items\nshowitems.xhtml?productId" as items
+state "Item detail\nshowitem.xhtml?itemId" as item
+state "Search results\nsearchresult.xhtml" as search
+state "Sign on\nsignon.xhtml" as signon
+state "Create account\ncreateaccount.xhtml" as create
+state "Account\nshowaccount.xhtml" as acct
+state "Update account\nupdateaccount.xhtml" as upd
+state "Shopping cart\nshowcart.xhtml" as cart
+state "Confirm order\nconfirmorder.xhtml" as confirm
+state "Order confirmed\norderconfirmed.xhtml" as done
+state "Admin\n/admin/<entity>/search|view|create" as admin
+state "Error\nerror.xhtml" as err
+
+[*] --> main
+main --> prods : category hotspot
+prods --> items : product link
+items --> item : item link
+main --> search : navbar Search (doSearch)
+search --> item : item link
+item --> cart : Add to cart [signed in]
+search --> cart : Add to cart [signed in]
+main --> signon : Log in
+signon --> main : Sign in (doLogin)
+signon --> create : New customer (doCreateNewAccount)
+create --> main : Submit (doCreateCustomer)
+main --> acct : Welcome <name>
+acct --> upd : Edit
+upd --> acct : doUpdateAccount
+main --> cart : Shopping cart [cart not empty]
+cart --> item : item name
+cart --> confirm : Check Out
+confirm --> done : Submit (confirmOrder)
+done --> main : navbar
+main --> admin : Admin (no access control!)
+admin --> admin : search / view / create / edit / delete
+main --> main : Log out (doLogout) / Languages
+err --> main
+@enduml

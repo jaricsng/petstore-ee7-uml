@@ -1,0 +1,45 @@
+@startuml c4-03-component-web
+' C4 model, Level 3 - Component diagram of the Web Application container
+!include <C4/C4_Component>
+AddRelTag("smell", $textColor="#B00020", $lineColor="#B00020", $lineStyle=DashedLine(), $legendText="Architecture smell (see ARCH-01/02)")
+LAYOUT_TOP_DOWN()
+title C4 Level 3 - Components of the Web Application container (as built)
+
+Person(user, "Visitor / Customer / Administrator")
+System_Ext(apiClient, "REST API Client")
+ContainerDb(db, "Relational Database", "H2 / PostgreSQL")
+
+Container_Boundary(web, "Web Application (applicationPetstore.war)") {
+  Component(faces, "Faces Front Controller", "FacesServlet + Facelets *.xhtml, PrimeFaces 6.1, Bootstrap 3", "Routes requests, renders views, binds EL to backing beans.")
+  Component(shopUi, "Shopping Controllers", "CDI @Named beans: CatalogBean, AccountBean, ShoppingCartBean, LocaleBean", "Presentation logic for browse, search, account and checkout.")
+  Component(adminUi, "Admin CRUD Controllers", "7 x @Stateful @ConversationScoped <Entity>Bean (JBoss Forge scaffold)", "Search, paginate, create, edit, delete with EXTENDED persistence context.")
+  Component(rest, "REST Resources", "JAX-RS @Stateless <Entity>Endpoint x5 + RestApplication", "CRUD over entities; returns JPA entities as JSON/XML.")
+  Component(catalog, "Catalog Service", "@Stateless EJB (CatalogService)", "Session Facade for Category, Product, Item queries.")
+  Component(customerSvc, "Customer Service", "@Stateless EJB (CustomerService)", "Registration, lookup, update of customers.")
+  Component(orderSvc, "Order Service", "@Stateless EJB (PurchaseOrderService)", "Creates purchase orders from cart lines (JTA).")
+  Component(generic, "Generic Entity Services", "AbstractService<T> + 5 subclasses", "Template-method CRUD and query-by-example.")
+  Component(security, "Security", "JAAS LoginModule, CallbackHandler, LoginContextProducer", "Intended authentication (currently bypassed, SEC-01).")
+  Component(xcut, "Cross-cutting", "CDI Interceptors + Producers", "Logging, exception-to-FacesMessage, Logger/EntityManager/config producers.")
+  Component(domain, "Domain Model", "JPA 2.1 entities + Bean Validation constraints", "Category, Product, Item, Customer, Address, Country, PurchaseOrder, OrderLine, CreditCard.")
+}
+
+Rel(user, faces, "HTTP(S)")
+Rel(apiClient, rest, "HTTP JSON/XML")
+Rel(faces, shopUi, "EL action/value bindings")
+Rel(faces, adminUi, "EL action/value bindings")
+Rel(shopUi, catalog, "Uses")
+Rel(shopUi, customerSvc, "Uses")
+Rel(shopUi, orderSvc, "Uses")
+Rel(shopUi, adminUi, "Uses CountryBean converter (cross-layer)", $tags="smell")
+Rel(security, customerSvc, "Looks up via JNDI BeanManager")
+Rel(catalog, domain, "JPA")
+Rel(customerSvc, domain, "JPA")
+Rel(orderSvc, domain, "JPA")
+Rel(generic, domain, "JPA")
+Rel(adminUi, domain, "EntityManager directly (bypasses services)", $tags="smell")
+Rel(rest, domain, "EntityManager directly (bypasses services)", $tags="smell")
+Rel(xcut, catalog, "Intercepts @Loggable")
+Rel(domain, db, "JDBC")
+
+SHOW_LEGEND()
+@enduml

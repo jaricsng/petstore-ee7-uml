@@ -1,0 +1,18 @@
+@startuml wf-04-item
+!include _chrome.iuml
+title Wireframe - Item detail - showitem.xhtml (UC03 View Item Details, UC10 Add Item to Cart)
+salt
+{+
+$navbar("Welcome Anakin | Log out")
+==
+<b>Angelfish - Large
+{
+  <&image> fish1.jpg | Unit cost: 10.00 $ | [Add to cart]
+}
+{
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit...
+}
+<i>[Add to cart] is rendered only when accountBean.loggedIn
+$footer()
+}
+@enduml

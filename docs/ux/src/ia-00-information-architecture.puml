@@ -1,0 +1,34 @@
+@startwbs ia-00-information-architecture
+' Information architecture (site map) of the as-built application
+title Information architecture - site map (as built)
+* YAPS PetStore
+** Storefront (/shopping)
+*** Home (main)
+*** Catalogue
+**** Category -> Products (showproducts)
+**** Product -> Items (showitems)
+**** Item detail (showitem)
+*** Search results (searchresult)
+*** Account
+**** Sign on (signon)
+**** Create account (createaccount)
+**** View account (showaccount)
+**** Update account (updateaccount)
+*** Checkout
+**** Shopping cart (showcart)
+**** Confirm order (confirmorder)
+**** Order confirmed (orderconfirmed)
+** Administration (/admin)
+*** Category (search, view, create)
+*** Product (search, view, create)
+*** Item (search, view, create)
+*** Country (search, view, create)
+*** Customer (search, view, create)
+*** Purchase order (search, view)
+** Utilities
+*** Languages en / fr
+*** Debug (debug.xhtml)
+*** Error (error.xhtml)
+** REST API (/rest)
+*** categories, countries, customers, items, products
+@endwbs

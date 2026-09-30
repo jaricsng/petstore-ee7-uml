@@ -1,0 +1,61 @@
+@startuml 13b-sequence-sign-in
+' @kind: Sequence
+' @summary: Sign-in as implemented versus the intended JAAS flow; exposes finding SEC-01.
+!include ../_style.iuml
+mainframe **sd** SignIn
+title Sequence Diagram - Sign in (as implemented) versus intended JAAS flow
+
+actor ":Visitor" as user
+participant "acct :\nAccountBean" as acct
+participant "cred :\nCredentialsBean" as cred
+participant "custSvc :\nCustomerService" as cs
+participant "lc :\nLoginContext" as lc
+participant ":SimpleCallbackHandler" as cbh
+participant ":SimpleLoginModule" as lm
+participant "db :\nPetstorePU" as db
+
+user -> cred : setLogin(l), setPassword(p)
+user -> acct : doLogin()
+activate acct
+acct -> cred : getLogin(), getPassword()
+alt login empty
+  acct -> acct : addWarningMessage("id_filled")
+  acct --> user : doLogin : null
+else password empty
+  acct -> acct : addWarningMessage("pwd_filled")
+  acct --> user : doLogin : null
+else both filled
+  alt #FFEEEE as implemented (Finding SEC-01)
+    acct -> cs : findCustomer(login)
+    cs -> db : Customer.findByLogin
+    db --> cs : findByLogin : customer [0..1]
+    cs --> acct : findCustomer : customer
+    acct -> acct : loggedinCustomer = customer
+    note right of acct
+      Password is never checked.
+      If login is unknown, loggedinCustomer = null
+      and the user silently stays anonymous.
+    end note
+  else #EEF6EE intended design (commented-out TODO: loginContext.login())
+    acct -> lc : login()
+    activate lc
+    lc -> lm : initialize(subject, cbh, ..)
+    lm -> lm : getCustomerService()\n(JNDI java:comp/BeanManager)
+    lc -> lm : login()
+    activate lm
+    lm -> cbh : handle([NameCallback, PasswordCallback])
+    cbh -> cred : getLogin(), getPassword()
+    cbh --> lm : handle : callbacks filled
+    lm -> cs : findCustomer(login, plainPassword)
+    cs -> db : Customer.findByLoginAndPassword
+    note right: stored password is SHA-256;\nplain-text comparison never matches\n-> NoResultException -> LoginException
+    cs --> lm : findCustomer : NoResultException
+    lm --> lc : login : LoginException
+    deactivate lm
+    lc --> acct : login : LoginException
+    deactivate lc
+  end
+  acct --> user : doLogin : "main.faces"
+end
+deactivate acct
+@enduml

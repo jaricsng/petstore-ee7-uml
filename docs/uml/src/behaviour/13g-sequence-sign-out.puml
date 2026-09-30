@@ -1,0 +1,43 @@
+@startuml 13g-sequence-sign-out
+' @kind: Sequence
+' @summary: Sign out: clears the logged-in customer, ends the long-running conversation that holds the cart, and shows a confirmation message.
+!include ../_style.iuml
+mainframe **sd** SignOut
+title Sequence Diagram - Sign out (template.xhtml menu -> AccountBean.doLogout)
+
+actor ":Customer" as user
+participant ":FacesServlet" as fs
+participant ":ExceptionInterceptor" as exi <<Interceptor>>
+participant "acct :\nAccountBean" as acct <<SessionScoped>>
+participant "conv :\nConversation" as conv
+participant "cart :\nShoppingCartBean" as cart <<ConversationScoped>>
+
+user -> fs : POST (menu "Log out", rendered if loggedIn)
+activate fs
+fs -> exi : doLogout()
+activate exi
+exi -> acct : proceed()
+activate acct
+acct -> acct : loggedinCustomer = null
+acct -> conv : isTransient()
+conv --> acct : transient = isTransient
+opt !transient (a cart conversation is active)
+  acct -> conv : end()
+  conv -> cart : destroy context at end of request\n(cartItems discarded)
+  destroy cart
+end
+acct -> acct : addInformationMessage("been_loggedout")
+acct --> exi : proceed : "main.faces"
+deactivate acct
+exi --> fs : doLogout : "main.faces"
+deactivate exi
+fs --> user : POST : main.xhtml + "You have been logged out"
+deactivate fs
+
+note right of acct
+  The HTTP session itself is NOT invalidated
+  (no ExternalContext.invalidateSession()):
+  CredentialsBean still holds the last login
+  and password (Finding SEC-07).
+end note
+@enduml
