@@ -24,7 +24,7 @@
     <version.derby>10.10.1.1</version.derby>
     <version.equalsverifier>3.12.3</version.equalsverifier>
     <!-- UI (WebJar, Bootstrap, JQuery...) -->
-    <version.bootstrap>3.3.7-1</version.bootstrap>
+    <version.bootstrap>5.0.0</version.bootstrap>
     <version.jquery>2.2.4</version.jquery>
     <version.primefaces>6.1</version.primefaces>
     <version.primefaces-themes>1.1.0</version.primefaces-themes>
