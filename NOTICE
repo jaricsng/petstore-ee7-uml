@@ -1,0 +1,32 @@
+petstore-ee7-uml
+================
+
+This repository is an adaptation of "agoncal-application-petstore-ee7" by
+Antonio Goncalves (https://github.com/agoncal/agoncal-application-petstore-ee7),
+licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/).
+
+Baseline
+    The application source is unchanged from upstream commit 725839c
+    ("Bump Primefaces Themes", 2025-01-23), tagged here as upstream-725839c.
+    All 105 upstream commits are preserved with their original authorship.
+
+Changes made in this repository
+    - docs/ added: UML 2.5.1 model (PlantUML), architecture views and ADRs
+      (arc42, C4), interface design and wireframes, REST API review and
+      proposed OpenAPI 3.1 contract, test strategy and test case catalogue.
+    - LICENSE and NOTICE files added (the upstream repository states its
+      licence only in README.md).
+    Later changes are recorded in the git history of this repository.
+
+Licence of the adaptations
+    The adaptations are licensed under the same licence, CC BY-SA 3.0,
+    as required by section 4(b) of that licence.
+
+Third-party names and tools
+    UML is a registered trademark of the Object Management Group (OMG).
+    References to "UML 2.5.1" mean OMG document formal/17-12-05. The
+    specification is not redistributed in this repository.
+    Diagrams are rendered with PlantUML (https://plantuml.com). C4-PlantUML
+    (https://github.com/plantuml-stdlib/C4-PlantUML) is MIT-licensed.
+    Java EE, Jakarta EE, WildFly, PrimeFaces, Bootstrap and other product
+    names are trademarks of their respective owners.

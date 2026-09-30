@@ -29,4 +29,10 @@ vpproject
 teamworkUser.xml
 projectFilesBackup*
 *.zip
-*.gzprojectFilesBackup*
+*.gz
+
+# OMG specification PDFs are referenced by clause, never committed (copyright)
+/uml251-spec.pdf
+*.spec.pdf
+# Local documentation tooling
+/tools/
